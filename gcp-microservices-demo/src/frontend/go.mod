@@ -1,6 +1,6 @@
 module github.com/eb-k8s/serverless-demos-in-fission/gcp-microservices-demo/src/frontend
 
-go 1.18
+go 1.17
 
 require (
 	cloud.google.com/go v0.99.0
