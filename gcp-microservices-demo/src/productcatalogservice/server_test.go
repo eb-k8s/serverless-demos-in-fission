@@ -17,8 +17,6 @@ package main
 import (
 	"testing"
 
-	"github.com/eb-k8s/serverless-demos-in-fission/gcp-microservices-demo/src/productcatalogservice/rest"
-
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -31,7 +29,7 @@ func TestServer(t *testing.T) {
 		t.Error(diff)
 	}
 
-	got, err := GetProduct(&rest.GetProductRequest{Id: "OLJCESPC7Z"})
+	got, err := GetProduct(&GetProductRequest{Id: "OLJCESPC7Z"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -40,11 +38,11 @@ func TestServer(t *testing.T) {
 		t.Errorf("got %v, want %v", got, want)
 	}
 
-	sres, err := SearchProducts(&rest.SearchProductsRequest{Query: "sunglasses"})
+	sres, err := SearchProducts(&SearchProductsRequest{Query: "sunglasses"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if diff := cmp.Diff(sres.Results, []*rest.Product{parseCatalog()[0]}); diff != "" {
+	if diff := cmp.Diff(sres.Results, []*Product{parseCatalog()[0]}); diff != "" {
 		t.Error(diff)
 	}
 }

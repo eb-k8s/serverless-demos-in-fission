@@ -22,13 +22,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/eb-k8s/serverless-demos-in-fission/gcp-microservices-demo/src/productcatalogservice/rest"
-
 	"github.com/sirupsen/logrus"
 )
 
 var (
-	cat rest.ListProductsResponse
+	cat ListProductsResponse
 	log *logrus.Logger
 )
 
@@ -83,7 +81,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		result, err := GetProduct(&rest.GetProductRequest{Id: v.Get("id")})
+		result, err := GetProduct(&GetProductRequest{Id: v.Get("id")})
 		if err != nil {
 			log.Error(err)
 			w.WriteHeader(http.StatusBadRequest)
@@ -108,7 +106,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		result, err := SearchProducts(&rest.SearchProductsRequest{Query: v.Get("query")})
+		result, err := SearchProducts(&SearchProductsRequest{Query: v.Get("query")})
 		if err != nil {
 			log.Error(err)
 			w.WriteHeader(http.StatusBadRequest)
@@ -134,7 +132,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func getCatalogData(catalog *rest.ListProductsResponse) error {
+func getCatalogData(catalog *ListProductsResponse) error {
 	if err := json.Unmarshal([]byte(productData), catalog); err != nil {
 		log.Warnf("failed to parse the catalog JSON: %v", err)
 		return err
@@ -143,22 +141,22 @@ func getCatalogData(catalog *rest.ListProductsResponse) error {
 	return nil
 }
 
-func parseCatalog() []*rest.Product {
+func parseCatalog() []*Product {
 	if len(cat.Products) == 0 {
 		err := getCatalogData(&cat)
 		if err != nil {
-			return []*rest.Product{}
+			return []*Product{}
 		}
 	}
 	return cat.Products
 }
 
-func ListProducts() (*rest.ListProductsResponse, error) {
-	return &rest.ListProductsResponse{Products: parseCatalog()}, nil
+func ListProducts() (*ListProductsResponse, error) {
+	return &ListProductsResponse{Products: parseCatalog()}, nil
 }
 
-func GetProduct(req *rest.GetProductRequest) (*rest.Product, error) {
-	var found *rest.Product
+func GetProduct(req *GetProductRequest) (*Product, error) {
+	var found *Product
 	for i := 0; i < len(parseCatalog()); i++ {
 		if req.Id == parseCatalog()[i].Id {
 			found = parseCatalog()[i]
@@ -170,14 +168,14 @@ func GetProduct(req *rest.GetProductRequest) (*rest.Product, error) {
 	return found, nil
 }
 
-func SearchProducts(req *rest.SearchProductsRequest) (*rest.SearchProductsResponse, error) {
+func SearchProducts(req *SearchProductsRequest) (*SearchProductsResponse, error) {
 	// Intepret query as a substring match in name or description.
-	var ps []*rest.Product
+	var ps []*Product
 	for _, p := range parseCatalog() {
 		if strings.Contains(strings.ToLower(p.Name), strings.ToLower(req.Query)) ||
 			strings.Contains(strings.ToLower(p.Description), strings.ToLower(req.Query)) {
 			ps = append(ps, p)
 		}
 	}
-	return &rest.SearchProductsResponse{Results: ps}, nil
+	return &SearchProductsResponse{Results: ps}, nil
 }

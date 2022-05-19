@@ -1,4 +1,4 @@
-package rest
+package main
 
 type Product struct {
 	Id          string `json:"id,omitempty"`
