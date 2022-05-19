@@ -1,0 +1,24 @@
+apiVersion: fission.io/v1
+kind: HTTPTrigger
+metadata:
+  creationTimestamp: null
+  name: 0ba26d19-45bf-4c60-9fff-f8355eed7484
+  namespace: default
+spec:
+  createingress: false
+  functionref:
+    functionweights: null
+    name: shippingservice
+    type: name
+  host: ""
+  ingressconfig:
+    annotations: null
+    host: '*'
+    path: /shipping
+    tls: ""
+  method: ""
+  methods:
+  - POST
+  - PUT
+  prefix: ""
+  relativeurl: /shipping
