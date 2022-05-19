@@ -1,0 +1,55 @@
+include:
+- productcatalogservice.zip
+kind: ArchiveUploadSpec
+name: productcatalogservice-zip-v6Nj
+
+---
+apiVersion: fission.io/v1
+kind: Package
+metadata:
+  creationTimestamp: null
+  name: productcatalogservice-0256a068-7802-4dd4-8e86-8b666d56924d
+  namespace: default
+spec:
+  deployment:
+    checksum: {}
+  environment:
+    name: gcpdemo-go
+    namespace: default
+  source:
+    checksum: {}
+    type: url
+    url: archive://productcatalogservice-zip-v6Nj
+status:
+  buildstatus: pending
+  lastUpdateTimestamp: "2022-05-19T08:58:43Z"
+
+---
+apiVersion: fission.io/v1
+kind: Function
+metadata:
+  creationTimestamp: null
+  name: productcatalogservice
+  namespace: default
+spec:
+  InvokeStrategy:
+    ExecutionStrategy:
+      ExecutorType: poolmgr
+      MaxScale: 0
+      MinScale: 0
+      SpecializationTimeout: 120
+      TargetCPUPercent: 0
+    StrategyType: execution
+  concurrency: 500
+  environment:
+    name: gcpdemo-go
+    namespace: default
+  functionTimeout: 60
+  idletimeout: 120
+  package:
+    functionName: Handler
+    packageref:
+      name: productcatalogservice-0256a068-7802-4dd4-8e86-8b666d56924d
+      namespace: default
+  requestsPerPod: 1
+  resources: {}
