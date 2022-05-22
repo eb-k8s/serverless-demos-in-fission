@@ -1,28 +1,28 @@
 include:
-- adservice.zip
+- adservice-1.0.0-jar-with-dependencies.jar
 kind: ArchiveUploadSpec
-name: adservice-zip-tsEU
+name: adservice-1-0-0-jar-with-dependencies-jar-2zQl
 
 ---
 apiVersion: fission.io/v1
 kind: Package
 metadata:
   creationTimestamp: null
-  name: adservice-6b3f8588-6fa9-4372-9be6-96789861a853
+  name: adservice-5ba470e1-907a-49c3-ac21-0fe554c53358
   namespace: default
 spec:
   deployment:
     checksum: {}
+    type: url
+    url: archive://adservice-1-0-0-jar-with-dependencies-jar-2zQl
   environment:
     name: gcpdemo-java
     namespace: default
   source:
     checksum: {}
-    type: url
-    url: archive://adservice-zip-tsEU
 status:
-  buildstatus: pending
-  lastUpdateTimestamp: "2022-05-22T08:07:05Z"
+  buildstatus: none
+  lastUpdateTimestamp: "2022-05-22T09:06:15Z"
 
 ---
 apiVersion: fission.io/v1
@@ -49,7 +49,7 @@ spec:
   package:
     functionName: adservice.Adservice
     packageref:
-      name: adservice-6b3f8588-6fa9-4372-9be6-96789861a853
+      name: adservice-5ba470e1-907a-49c3-ac21-0fe554c53358
       namespace: default
   requestsPerPod: 1
   resources: {}
