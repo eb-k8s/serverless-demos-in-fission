@@ -1,14 +1,14 @@
 include:
 - adservice.zip
 kind: ArchiveUploadSpec
-name: adservice-zip-JeQn
+name: adservice-zip-tsEU
 
 ---
 apiVersion: fission.io/v1
 kind: Package
 metadata:
   creationTimestamp: null
-  name: adservice-f05f7ccb-d33b-457e-8f4d-1d46715092ca
+  name: adservice-6b3f8588-6fa9-4372-9be6-96789861a853
   namespace: default
 spec:
   deployment:
@@ -19,10 +19,10 @@ spec:
   source:
     checksum: {}
     type: url
-    url: archive://adservice-zip-JeQn
+    url: archive://adservice-zip-tsEU
 status:
   buildstatus: pending
-  lastUpdateTimestamp: "2022-05-22T07:01:16Z"
+  lastUpdateTimestamp: "2022-05-22T08:07:05Z"
 
 ---
 apiVersion: fission.io/v1
@@ -49,7 +49,7 @@ spec:
   package:
     functionName: adservice.Adservice
     packageref:
-      name: adservice-f05f7ccb-d33b-457e-8f4d-1d46715092ca
+      name: adservice-6b3f8588-6fa9-4372-9be6-96789861a853
       namespace: default
   requestsPerPod: 1
   resources: {}
