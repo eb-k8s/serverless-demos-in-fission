@@ -6,6 +6,7 @@ import java.net.URI;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.logging.Level;
@@ -33,7 +34,7 @@ public class Adservice implements Function {
 	private static final ImmutableListMultimap<String, Ad> adsMap = createAdsMap();
 	
 	private static final Random random = new Random();
-	  
+	
 	public ResponseEntity call(RequestEntity req, Context context) {
 		List<String> context_keys = new ArrayList<String>();
 		URI url = req.getUrl();
@@ -44,12 +45,12 @@ public class Adservice implements Function {
 				int idx = pair.indexOf("=");
 				try {
 					String key = URLDecoder.decode(pair.substring(0, idx), "UTF-8");
-					if (!key.equals("context_key")) {
+					if (!key.equals("context_keys")) {
 						logger.log(Level.SEVERE, "the key is incorrect: "+key);
 						return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 					}
 					String value =  URLDecoder.decode(pair.substring(idx + 1), "UTF-8");
-					context_keys.add(value);
+					Collections.addAll(context_keys, value.split(","));
 				} catch (UnsupportedEncodingException e) {
 					logger.log(Level.SEVERE, "failed decode");
 					e.printStackTrace();

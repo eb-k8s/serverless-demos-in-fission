@@ -16,7 +16,7 @@ public class TestAdservice {
 	@Test
 	public void testonekey() throws URISyntaxException {
 		Adservice ad = new Adservice();
-		String uri = "http://example.com/ad?context_key=clothing";
+		String uri = "http://example.com/ad?context_keys=clothing";
 		RequestEntity request = RequestEntity.get(new URI(uri)).build();
 		ResponseEntity resp = ad.call(request, null);
 		String body = resp.getBody().toString();
@@ -38,7 +38,7 @@ public class TestAdservice {
 	@Test
 	public void testmorekey() throws URISyntaxException {
 		Adservice ad = new Adservice();
-		String uri = "http://example.com/ad?context_key=footwear&context_key=decor";
+		String uri = "http://example.com/ad?context_keys=footwear,decor";
 		RequestEntity request = RequestEntity.get(new URI(uri)).build();
 		ResponseEntity resp = ad.call(request, null);
 		String body = resp.getBody().toString();
