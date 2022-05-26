@@ -1,0 +1,56 @@
+include:
+- cartservice.zip
+kind: ArchiveUploadSpec
+name: cartservice-zip-8ix2
+
+---
+apiVersion: fission.io/v1
+kind: Package
+metadata:
+  creationTimestamp: null
+  name: cartservice-353e9cf2-9d8a-4af2-90a9-ae51866f65d1
+  namespace: default
+spec:
+  buildcmd: ./build.sh
+  deployment:
+    checksum: {}
+  environment:
+    name: gcpdemo-python
+    namespace: default
+  source:
+    checksum: {}
+    type: url
+    url: archive://cartservice-zip-8ix2
+status:
+  buildstatus: pending
+  lastUpdateTimestamp: "2022-05-26T12:03:35Z"
+
+---
+apiVersion: fission.io/v1
+kind: Function
+metadata:
+  creationTimestamp: null
+  name: cartservice
+  namespace: default
+spec:
+  InvokeStrategy:
+    ExecutionStrategy:
+      ExecutorType: poolmgr
+      MaxScale: 0
+      MinScale: 0
+      SpecializationTimeout: 120
+      TargetCPUPercent: 0
+    StrategyType: execution
+  concurrency: 500
+  environment:
+    name: gcpdemo-python
+    namespace: default
+  functionTimeout: 60
+  idletimeout: 120
+  package:
+    functionName: handler.main
+    packageref:
+      name: cartservice-353e9cf2-9d8a-4af2-90a9-ae51866f65d1
+      namespace: default
+  requestsPerPod: 1
+  resources: {}
