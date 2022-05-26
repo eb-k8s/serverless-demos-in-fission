@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 )
 
 type GetSupportedCurrenciesResponse struct {
@@ -343,9 +344,7 @@ func ListRecommendations(recommendationSvcAddr string, in *ListRecommendationsRe
 	out := new(ListRecommendationsResponse)
 	v := url.Values{}
 	v.Add("user_id", in.UserId)
-	for _, value := range in.ProductIds {
-		v.Add("product_id", value)
-	}
+	v.Add("product_ids", strings.Join(in.ProductIds, ","))
 	res, err := http.Get(recommendationSvcAddr + "?" + v.Encode())
 	if err != nil {
 		return nil, err
@@ -365,9 +364,7 @@ func ListRecommendations(recommendationSvcAddr string, in *ListRecommendationsRe
 func GetAds(adSvcAddr string, in *AdRequest) (*AdResponse, error) {
 	out := new(AdResponse)
 	v := url.Values{}
-	for _, value := range in.ContextKeys {
-		v.Add("context_key", value)
-	}
+	v.Add("context_keys", strings.Join(in.ContextKeys, ","))
 	res, err := http.Get(adSvcAddr + "?" + v.Encode())
 	if err != nil {
 		return nil, err
