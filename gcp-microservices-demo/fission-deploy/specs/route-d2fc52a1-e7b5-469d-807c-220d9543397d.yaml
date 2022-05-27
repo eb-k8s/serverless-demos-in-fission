@@ -1,0 +1,23 @@
+apiVersion: fission.io/v1
+kind: HTTPTrigger
+metadata:
+  creationTimestamp: null
+  name: d2fc52a1-e7b5-469d-807c-220d9543397d
+  namespace: default
+spec:
+  createingress: false
+  functionref:
+    functionweights: null
+    name: recommendationservice
+    type: name
+  host: ""
+  ingressconfig:
+    annotations: null
+    host: '*'
+    path: /recommendation
+    tls: ""
+  method: ""
+  methods:
+  - GET
+  prefix: ""
+  relativeurl: /recommendation

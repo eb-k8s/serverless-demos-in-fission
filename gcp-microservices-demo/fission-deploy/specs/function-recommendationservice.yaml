@@ -1,0 +1,56 @@
+include:
+- recommendationservice.zip
+kind: ArchiveUploadSpec
+name: recommendationservice-zip-DXBJ
+
+---
+apiVersion: fission.io/v1
+kind: Package
+metadata:
+  creationTimestamp: null
+  name: recommendationservice-1699d49e-cec4-4bd0-a5e6-d9b2e6e8bbd7
+  namespace: default
+spec:
+  buildcmd: ./build.sh
+  deployment:
+    checksum: {}
+  environment:
+    name: gcpdemo-python
+    namespace: default
+  source:
+    checksum: {}
+    type: url
+    url: archive://recommendationservice-zip-DXBJ
+status:
+  buildstatus: pending
+  lastUpdateTimestamp: "2022-05-27T09:51:02Z"
+
+---
+apiVersion: fission.io/v1
+kind: Function
+metadata:
+  creationTimestamp: null
+  name: recommendationservice
+  namespace: default
+spec:
+  InvokeStrategy:
+    ExecutionStrategy:
+      ExecutorType: poolmgr
+      MaxScale: 0
+      MinScale: 0
+      SpecializationTimeout: 120
+      TargetCPUPercent: 0
+    StrategyType: execution
+  concurrency: 500
+  environment:
+    name: gcpdemo-python
+    namespace: default
+  functionTimeout: 60
+  idletimeout: 120
+  package:
+    functionName: handler.main
+    packageref:
+      name: recommendationservice-1699d49e-cec4-4bd0-a5e6-d9b2e6e8bbd7
+      namespace: default
+  requestsPerPod: 1
+  resources: {}
