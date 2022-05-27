@@ -1,0 +1,56 @@
+include:
+- emailservice.zip
+kind: ArchiveUploadSpec
+name: emailservice-zip-iA7U
+
+---
+apiVersion: fission.io/v1
+kind: Package
+metadata:
+  creationTimestamp: null
+  name: emailservice-3aaad6f9-24ad-4039-a01f-981482944fa2
+  namespace: default
+spec:
+  buildcmd: ./build.sh
+  deployment:
+    checksum: {}
+  environment:
+    name: gcpdemo-python
+    namespace: default
+  source:
+    checksum: {}
+    type: url
+    url: archive://emailservice-zip-iA7U
+status:
+  buildstatus: pending
+  lastUpdateTimestamp: "2022-05-27T15:54:05Z"
+
+---
+apiVersion: fission.io/v1
+kind: Function
+metadata:
+  creationTimestamp: null
+  name: emailservice
+  namespace: default
+spec:
+  InvokeStrategy:
+    ExecutionStrategy:
+      ExecutorType: poolmgr
+      MaxScale: 0
+      MinScale: 0
+      SpecializationTimeout: 120
+      TargetCPUPercent: 0
+    StrategyType: execution
+  concurrency: 500
+  environment:
+    name: gcpdemo-python
+    namespace: default
+  functionTimeout: 60
+  idletimeout: 120
+  package:
+    functionName: handler.main
+    packageref:
+      name: emailservice-3aaad6f9-24ad-4039-a01f-981482944fa2
+      namespace: default
+  requestsPerPod: 1
+  resources: {}
