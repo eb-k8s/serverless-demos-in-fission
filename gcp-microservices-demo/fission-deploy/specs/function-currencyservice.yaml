@@ -1,0 +1,55 @@
+include:
+- currencyservice.zip
+kind: ArchiveUploadSpec
+name: currencyservice-zip-cHNx
+
+---
+apiVersion: fission.io/v1
+kind: Package
+metadata:
+  creationTimestamp: null
+  name: currencyservice-a2735e6e-957a-462f-b916-dd40ba223cd8
+  namespace: default
+spec:
+  deployment:
+    checksum: {}
+  environment:
+    name: gcpdemo-nodejs
+    namespace: default
+  source:
+    checksum: {}
+    type: url
+    url: archive://currencyservice-zip-cHNx
+status:
+  buildstatus: pending
+  lastUpdateTimestamp: "2022-05-29T14:32:18Z"
+
+---
+apiVersion: fission.io/v1
+kind: Function
+metadata:
+  creationTimestamp: null
+  name: currencyservice
+  namespace: default
+spec:
+  InvokeStrategy:
+    ExecutionStrategy:
+      ExecutorType: poolmgr
+      MaxScale: 0
+      MinScale: 0
+      SpecializationTimeout: 120
+      TargetCPUPercent: 0
+    StrategyType: execution
+  concurrency: 500
+  environment:
+    name: gcpdemo-nodejs
+    namespace: default
+  functionTimeout: 60
+  idletimeout: 120
+  package:
+    functionName: handler
+    packageref:
+      name: currencyservice-a2735e6e-957a-462f-b916-dd40ba223cd8
+      namespace: default
+  requestsPerPod: 1
+  resources: {}

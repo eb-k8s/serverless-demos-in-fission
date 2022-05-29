@@ -1,0 +1,24 @@
+apiVersion: fission.io/v1
+kind: HTTPTrigger
+metadata:
+  creationTimestamp: null
+  name: 419936a3-9859-47f4-8509-6d87975b553a
+  namespace: default
+spec:
+  createingress: false
+  functionref:
+    functionweights: null
+    name: currencyservice
+    type: name
+  host: ""
+  ingressconfig:
+    annotations: null
+    host: '*'
+    path: /currency
+    tls: ""
+  method: ""
+  methods:
+  - GET
+  - POST
+  prefix: ""
+  relativeurl: /currency
