@@ -1,0 +1,13 @@
+{
+  "name": "paymentservice",
+  "version": "1.0.0",
+  "engines": {
+    "node": ">=7.6.0"
+  },
+  "dependencies": {
+    "pino": "5.17.0",
+    "simple-card-validator": "^1.1.0",
+    "uuid": "^3.2.1"
+  },
+  "license": "Apache-2.0"
+}
