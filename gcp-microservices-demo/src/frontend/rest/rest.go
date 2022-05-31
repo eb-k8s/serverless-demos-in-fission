@@ -263,14 +263,20 @@ func (m *Cart) GetItems() []*CartItem {
 }
 
 func EmptyCart(cartSvcAddr string, in *EmptyCartRequest) error {
-	v := url.Values{}
-	v.Add("user_id", in.UserId)
-	req, err := http.NewRequest("DELETE", cartSvcAddr+"?"+v.Encode(), nil)
+	payload, err := json.Marshal(in)
 	if err != nil {
 		return err
 	}
+	req, err := http.NewRequest("DELETE", cartSvcAddr, bytes.NewBuffer(payload))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
 	_, err = http.DefaultClient.Do(req)
-	return err
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func AddItem(cartSvcAddr string, in *AddItemRequest) error {
