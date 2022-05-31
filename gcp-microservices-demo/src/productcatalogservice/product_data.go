@@ -9,7 +9,7 @@ var productData string = `
             "description": "Add a modern touch to your outfits with these sleek aviator sunglasses.",
             "picture": "/static/img/products/sunglasses.jpg",
             "price_usd": {
-                "currencyCode": "USD",
+                "currency_code": "USD",
                 "units": 19,
                 "nanos": 990000000
             },
@@ -21,7 +21,7 @@ var productData string = `
             "description": "Perfectly cropped cotton tank, with a scooped neckline.",
             "picture": "/static/img/products/tank-top.jpg",
             "price_usd": {
-                "currencyCode": "USD",
+                "currency_code": "USD",
                 "units": 18,
                 "nanos": 990000000
             },
@@ -33,7 +33,7 @@ var productData string = `
             "description": "This gold-tone stainless steel watch will work with most of your outfits.",
             "picture": "/static/img/products/watch.jpg",
             "price_usd": {
-                "currencyCode": "USD",
+                "currency_code": "USD",
                 "units": 109,
                 "nanos": 990000000
             },
@@ -45,7 +45,7 @@ var productData string = `
             "description": "A neat addition to your summer wardrobe.",
             "picture": "/static/img/products/loafers.jpg",
             "price_usd": {
-                "currencyCode": "USD",
+                "currency_code": "USD",
                 "units": 89,
                 "nanos": 990000000
             },
@@ -57,7 +57,7 @@ var productData string = `
             "description": "This lightweight hairdryer has 3 heat and speed settings. It's perfect for travel.",
             "picture": "/static/img/products/hairdryer.jpg",
             "price_usd": {
-                "currencyCode": "USD",
+                "currency_code": "USD",
                 "units": 24,
                 "nanos": 990000000
             },
@@ -69,7 +69,7 @@ var productData string = `
             "description": "This small but intricate candle holder is an excellent gift.",
             "picture": "/static/img/products/candle-holder.jpg",
             "price_usd": {
-                "currencyCode": "USD",
+                "currency_code": "USD",
                 "units": 18,
                 "nanos": 990000000
             },
@@ -81,7 +81,7 @@ var productData string = `
             "description": "Add some flavor to your kitchen.",
             "picture": "/static/img/products/salt-and-pepper-shakers.jpg",
             "price_usd": {
-                "currencyCode": "USD",
+                "currency_code": "USD",
                 "units": 18,
                 "nanos": 490000000
             },
@@ -93,7 +93,7 @@ var productData string = `
             "description": "This bamboo glass jar can hold 57 oz (1.7 l) and is perfect for any kitchen.",
             "picture": "/static/img/products/bamboo-glass-jar.jpg",
             "price_usd": {
-                "currencyCode": "USD",
+                "currency_code": "USD",
                 "units": 5,
                 "nanos": 490000000
             },
@@ -105,7 +105,7 @@ var productData string = `
             "description": "A simple mug with a mustard interior.",
             "picture": "/static/img/products/mug.jpg",
             "price_usd": {
-                "currencyCode": "USD",
+                "currency_code": "USD",
                 "units": 8,
                 "nanos": 990000000
             },
