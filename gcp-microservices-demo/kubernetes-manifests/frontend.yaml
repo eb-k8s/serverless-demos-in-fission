@@ -1,0 +1,93 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: gcpdemo
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: gcpdemo
+spec:
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: server
+          image: registry.cn-beijing.aliyuncs.com/eb-k8s/frontend:v1.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+          - containerPort: 8080
+          readinessProbe:
+            initialDelaySeconds: 10
+            httpGet:
+              path: "/_healthz"
+              port: 8080
+              httpHeaders:
+              - name: "Cookie"
+                value: "shop_session-id=x-readiness-probe"
+          livenessProbe:
+            initialDelaySeconds: 10
+            httpGet:
+              path: "/_healthz"
+              port: 8080
+              httpHeaders:
+              - name: "Cookie"
+                value: "shop_session-id=x-liveness-probe"
+          env:
+          - name: PORT
+            value: "8080"
+          - name: PRODUCT_CATALOG_SERVICE_ADDR
+            value: "http://router.fission.svc.cluster.local/product"
+          - name: CURRENCY_SERVICE_ADDR
+            value: "http://router.fission.svc.cluster.local/currency"
+          - name: CART_SERVICE_ADDR
+            value: "http://router.fission.svc.cluster.local/cart"
+          - name: RECOMMENDATION_SERVICE_ADDR
+            value: "http://router.fission.svc.cluster.local/recommendation"
+          - name: SHIPPING_SERVICE_ADDR
+            value: "http://router.fission.svc.cluster.local/shipping"
+          - name: CHECKOUT_SERVICE_ADDR
+            value: "http://router.fission.svc.cluster.local/checkout"
+          - name: AD_SERVICE_ADDR
+            value: "http://router.fission.svc.cluster.local/ad"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: gcpdemo
+spec:
+  type: ClusterIP
+  selector:
+    app: frontend
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-external
+  namespace: gcpdemo
+spec:
+  type: LoadBalancer
+  selector:
+    app: frontend
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080
