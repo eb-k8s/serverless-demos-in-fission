@@ -1,0 +1,23 @@
+apiVersion: fission.io/v1
+kind: HTTPTrigger
+metadata:
+  creationTimestamp: null
+  name: 43035a41-447b-4e60-a480-9f784ef6de8e
+  namespace: default
+spec:
+  createingress: false
+  functionref:
+    functionweights: null
+    name: checkoutservice
+    type: name
+  host: ""
+  ingressconfig:
+    annotations: null
+    host: '*'
+    path: /checkout
+    tls: ""
+  method: ""
+  methods:
+  - POST
+  prefix: ""
+  relativeurl: /checkout

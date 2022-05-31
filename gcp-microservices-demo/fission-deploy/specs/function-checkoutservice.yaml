@@ -1,0 +1,55 @@
+include:
+- checkoutservice.zip
+kind: ArchiveUploadSpec
+name: checkoutservice-zip-Aw9W
+
+---
+apiVersion: fission.io/v1
+kind: Package
+metadata:
+  creationTimestamp: null
+  name: checkoutservice-48aea7bc-f506-4c38-a50b-479f6e0ef884
+  namespace: default
+spec:
+  deployment:
+    checksum: {}
+  environment:
+    name: gcpdemo-go
+    namespace: default
+  source:
+    checksum: {}
+    type: url
+    url: archive://checkoutservice-zip-Aw9W
+status:
+  buildstatus: pending
+  lastUpdateTimestamp: "2022-05-31T05:57:59Z"
+
+---
+apiVersion: fission.io/v1
+kind: Function
+metadata:
+  creationTimestamp: null
+  name: checkoutservice
+  namespace: default
+spec:
+  InvokeStrategy:
+    ExecutionStrategy:
+      ExecutorType: poolmgr
+      MaxScale: 0
+      MinScale: 0
+      SpecializationTimeout: 120
+      TargetCPUPercent: 0
+    StrategyType: execution
+  concurrency: 500
+  environment:
+    name: gcpdemo-go
+    namespace: default
+  functionTimeout: 60
+  idletimeout: 120
+  package:
+    functionName: Handler
+    packageref:
+      name: checkoutservice-48aea7bc-f506-4c38-a50b-479f6e0ef884
+      namespace: default
+  requestsPerPod: 1
+  resources: {}
