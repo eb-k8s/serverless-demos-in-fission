@@ -66,7 +66,7 @@ cd fission-deploy && fission spec destroy
 
 ## Architecture
 **gcp-microservices-demo** is composed of 11 microservices written in different
-languages that talk to each other over **http/json**. See the [API Documentation](/docs/api-documentation.md) doc for more information.
+languages that talk to each other over **http/json**. See the [API Documentation](./docs/api-documentation.md) doc for more information.
 
 Unlike the original GoogleCloudPlatform/microservices-demo, gcp-microservices-demo transform microservices into fission functions, except for frontend and loadgenerator.
 
