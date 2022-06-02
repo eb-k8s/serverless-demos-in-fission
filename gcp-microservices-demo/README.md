@@ -85,4 +85,4 @@ microservices](./docs/img/architecture-diagram.png)](./docs/img/architecture-dia
 | [emailservice](./src/emailservice) | Python | Sends users an order confirmation email (mock). | Function |
 | [checkoutservice](./src/checkoutservice) | Go | Retrieves user cart, prepares order and orchestrates the payment, shipping and the email notification. | Function |
 | [recommendationservice](./src/recommendationservice) | Python | Recommends other products based on what's given in the cart. | Function |
-| [adservice](./src/adservice) | Java | Provides text ads based on given context words. | Function |
+| [adservice](./src/adservice) | Go | Provides text ads based on given context words. | Function |
