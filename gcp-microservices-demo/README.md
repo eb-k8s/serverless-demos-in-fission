@@ -20,7 +20,7 @@ You should see:
 DeployUID: f18a3c0f-9c60-4b0b-8961-2499415a8dc3
 Resources:
  * 9 Functions
- * 4 Environments
+ * 3 Environments
  * 9 Packages 
  * 9 Http Triggers 
  * 0 MessageQueue Triggers
