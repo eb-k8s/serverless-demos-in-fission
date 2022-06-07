@@ -31,9 +31,9 @@ Validation Successful
 ......
 ```
 
-3. **Deploy frontend service & redis & loadgenerator(optional):**
+3. **Deploy frontend service & redis:**
 ```
-cd kubernetes-manifests/ && kubectl apply -f .
+cd kubernetes-manifests/ && kubectl apply -f frontend.yaml -f redis.yaml
 ```
 
 4. **Wait for the Pods to be ready.**
@@ -44,11 +44,22 @@ After a few minutes, you should see:
 ```
 NAME                             READY   STATUS    RESTARTS   AGE
 frontend-5949958478-8s9bs        1/1     Running   0          3m5s
-loadgenerator-5cf48d756c-v8q8n   1/1     Running   0          3m6s
 redis-cart-57bd646894-m4qgj      1/1     Running   0          3m6s
 ```
 
-5. **Access the web frontend in a browser** using the frontend's nodeport service.
+5. **Deploy loadgenerator(optional):**
+
+Use loadgenerator without web UI:
+```
+cd kubernetes-manifests/ && kubectl apply -f loadgenerator.yaml
+```
+
+Use loadgenerator with web UI:
+```
+cd kubernetes-manifests/ && kubectl apply -f loadgenerator-with-webui.yaml
+```
+
+6. **Access the web frontend in a browser** using the frontend's nodeport service.
 ```
 kubectl get service frontend-external -n gcpdemo | awk '{print $5}'
 ```
@@ -58,7 +69,7 @@ PORT(S)
 80:56510/TCP
 ```
 
-6. [Optional]**Clean up:**
+7. [Optional]**Clean up:**
 ```
 cd kubernetes-manifests/ && kubectl delete -f .
 cd fission-deploy && fission spec destroy

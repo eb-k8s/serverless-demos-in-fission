@@ -6,4 +6,4 @@ To build this image:
 ```
 docker build -t xxx:yyy .
 ```
-frontend image repository: registry.cn-beijing.aliyuncs.com/eb-k8s/loadgenerator:v1.0.0
+loadgenerator image repository: registry.cn-beijing.aliyuncs.com/eb-k8s/loadgenerator:v1.0.0
