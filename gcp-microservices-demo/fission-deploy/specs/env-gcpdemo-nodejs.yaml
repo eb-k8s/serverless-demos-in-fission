@@ -7,7 +7,7 @@ metadata:
 spec:
   builder:
     command: build
-    image: fission/node-builder
+    image: registry.cn-beijing.aliyuncs.com/eb-k8s/node-builder:1.32.2
   imagepullsecret: ""
   keeparchive: false
   poolsize: 4
