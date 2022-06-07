@@ -18,7 +18,6 @@ spec:
       labels:
         app: loadgenerator-with-webui
     spec:
-      nodeName: eb70170
       terminationGracePeriodSeconds: 5
       restartPolicy: Always
       initContainers:
