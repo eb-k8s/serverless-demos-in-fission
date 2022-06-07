@@ -7,7 +7,7 @@ metadata:
 spec:
   builder:
     command: build
-    image: fission/python-builder
+    image: registry.cn-beijing.aliyuncs.com/eb-k8s/python-builder:1.34.0
   imagepullsecret: ""
   keeparchive: false
   poolsize: 5
