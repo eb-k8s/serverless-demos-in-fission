@@ -37,14 +37,14 @@ spec:
       ExecutorType: poolmgr
       MaxScale: 0
       MinScale: 0
-      SpecializationTimeout: 120
+      SpecializationTimeout: 1000
       TargetCPUPercent: 0
     StrategyType: execution
   concurrency: 500
   environment:
     name: gcpdemo-nodejs
     namespace: default
-  functionTimeout: 60
+  functionTimeout: 1000
   idletimeout: 120
   package:
     functionName: handler
