@@ -15,44 +15,37 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
+	"io"
+
+	"net/http"
+	"net/http/httptest"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
-// TestGetQuote is a basic check on the GetQuote RPC service.
-func TestGetQuote(t *testing.T) {
-	// A basic test case to test logic and protobuf interactions.
-	req := &GetQuoteRequest{
-		Address: &Address{
-			StreetAddress: "Muffin Man",
-			City:          "London",
-			State:         "",
-			Country:       "England",
-		},
-		Items: []*CartItem{
-			{
-				ProductId: "23",
-				Quantity:  1,
-			},
-			{
-				ProductId: "46",
-				Quantity:  3,
-			},
-		},
-	}
-
-	res, err := GetQuote(req)
-	if err != nil {
-		t.Errorf("TestGetQuote (%v) failed", err)
-	}
-	if res.CostUsd.GetUnits() != 8 || res.CostUsd.GetNanos() != 990000000 {
-		t.Errorf("TestGetQuote: Quote value '%d.%d' does not match expected '%s'", res.CostUsd.GetUnits(), res.CostUsd.GetNanos(), "11.220000000")
+func TestMethodNotPOSTOrPUT(t *testing.T) {
+	req := httptest.NewRequest("GET", "http://example.com/shipping", nil)
+	resp := httptest.NewRecorder()
+	Handler(resp, req)
+	if resp.Code != http.StatusBadRequest {
+		t.Errorf("should be bad request")
 	}
 }
 
-// TestShipOrder is a basic check on the ShipOrder RPC service.
-func TestShipOrder(t *testing.T) {
-	// A basic test case to test logic and protobuf interactions.
-	req := &ShipOrderRequest{
+func TestWrongBody(t *testing.T) {
+	req := httptest.NewRequest("POST", "http://example.com/shipping", nil)
+	resp := httptest.NewRecorder()
+	Handler(resp, req)
+	if resp.Code != http.StatusBadRequest {
+		t.Errorf("should be bad request")
+	}
+}
+
+func TestGetQuote(t *testing.T) {
+	req_body := &GetQuoteRequest{
 		Address: &Address{
 			StreetAddress: "Muffin Man",
 			City:          "London",
@@ -70,13 +63,64 @@ func TestShipOrder(t *testing.T) {
 			},
 		},
 	}
-
-	res, err := ShipOrder(req)
+	payload, err := json.Marshal(req_body)
 	if err != nil {
-		t.Errorf("TestShipOrder (%v) failed", err)
+		t.Fatal(err)
 	}
-	// @todo improve quality of this test to check for a pattern such as '[A-Z]{2}-\d+-\d+'.
-	if len(res.TrackingId) != 18 {
-		t.Errorf("TestShipOrder: Tracking ID is malformed - has %d characters, %d expected", len(res.TrackingId), 18)
+	req := httptest.NewRequest("POST", "http://example.com/shipping", bytes.NewBuffer(payload))
+	resp := httptest.NewRecorder()
+	want := &GetQuoteResponse{CostUsd: &Money{CurrencyCode: "USD", Units: 8, Nanos: 990000000}}
+	got := new(GetQuoteResponse)
+	Handler(resp, req)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = json.Unmarshal(body, got)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if diff := cmp.Diff(got, want); diff != "" {
+		t.Errorf("got %v, want %v", got, want)
+	}
+}
+
+func TestShipOrder(t *testing.T) {
+	req_body := &ShipOrderRequest{
+		Address: &Address{
+			StreetAddress: "Muffin Man",
+			City:          "London",
+			State:         "",
+			Country:       "England",
+		},
+		Items: []*CartItem{
+			{
+				ProductId: "23",
+				Quantity:  1,
+			},
+			{
+				ProductId: "46",
+				Quantity:  3,
+			},
+		},
+	}
+	payload, err := json.Marshal(req_body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := httptest.NewRequest("PUT", "http://example.com/shipping", bytes.NewBuffer(payload))
+	resp := httptest.NewRecorder()
+	got := new(ShipOrderResponse)
+	Handler(resp, req)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = json.Unmarshal(body, got)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got.TrackingId) != 18 {
+		t.Errorf("TestShipOrder: Tracking ID is malformed - has %d characters, %d expected", len(got.TrackingId), 18)
 	}
 }
