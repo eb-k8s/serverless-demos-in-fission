@@ -14,5 +14,11 @@ spec:
   resources: {}
   runtime:
     image: fission/go-env-1.17
+    podspec:
+      containers:
+      - name: gcpdemo-go
+        env:
+        - name: OTEL_COLLECTOR_ADDR
+          value: fission-collector-collector.observability.svc:4317
   terminationGracePeriod: 1
   version: 3

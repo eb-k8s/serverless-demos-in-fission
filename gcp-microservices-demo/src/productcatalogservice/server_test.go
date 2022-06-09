@@ -15,34 +15,104 @@
 package main
 
 import (
+	"encoding/json"
+	"io"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestServer(t *testing.T) {
-	res, err := ListProducts()
-	if err != nil {
-		t.Fatal(err)
+func TestMethodNotGET(t *testing.T) {
+	req := httptest.NewRequest("POST", "http://example.com/product", nil)
+	resp := httptest.NewRecorder()
+	Handler(resp, req)
+	if resp.Code != http.StatusBadRequest {
+		t.Errorf("should be bad request")
 	}
-	if diff := cmp.Diff(res.Products, parseCatalog()); diff != "" {
-		t.Error(diff)
-	}
+}
 
-	got, err := GetProduct(&GetProductRequest{Id: "OLJCESPC7Z"})
+func TestListProducts(t *testing.T) {
+	req := httptest.NewRequest("GET", "http://example.com/product", nil)
+	resp := httptest.NewRecorder()
+	want := &ListProductsResponse{Products: parseCatalog()}
+	got := new(ListProductsResponse)
+	Handler(resp, req)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := parseCatalog()[0]
+	err = json.Unmarshal(body, got)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if diff := cmp.Diff(got, want); diff != "" {
 		t.Errorf("got %v, want %v", got, want)
 	}
+}
 
-	sres, err := SearchProducts(&SearchProductsRequest{Query: "sunglasses"})
+func TestGetProductWithMultipleIds(t *testing.T) {
+	req := httptest.NewRequest("GET", "http://example.com/product?id=OLJCESPC7Z&id=66VCHSJNUP", nil)
+	resp := httptest.NewRecorder()
+	Handler(resp, req)
+	if resp.Code != http.StatusBadRequest {
+		t.Errorf("should be bad request")
+	}
+}
+
+func TestGetProductWithSingleId(t *testing.T) {
+	req := httptest.NewRequest("GET", "http://example.com/product?id=OLJCESPC7Z", nil)
+	resp := httptest.NewRecorder()
+	want := parseCatalog()[0]
+	got := new(Product)
+	Handler(resp, req)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if diff := cmp.Diff(sres.Results, []*Product{parseCatalog()[0]}); diff != "" {
-		t.Error(diff)
+	err = json.Unmarshal(body, got)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if diff := cmp.Diff(got, want); diff != "" {
+		t.Errorf("got %v, want %v", got, want)
+	}
+}
+
+func TestSearchProductsWithMultipleQuerys(t *testing.T) {
+	req := httptest.NewRequest("GET", "http://example.com/product?query=sunglasses&query=Tank", nil)
+	resp := httptest.NewRecorder()
+	Handler(resp, req)
+	if resp.Code != http.StatusBadRequest {
+		t.Errorf("should be bad request")
+	}
+}
+
+func TestSearchProductsWithSingleQuery(t *testing.T) {
+	req := httptest.NewRequest("GET", "http://example.com/product?query=sunglasses", nil)
+	resp := httptest.NewRecorder()
+	want := &SearchProductsResponse{Results: []*Product{parseCatalog()[0]}}
+	got := new(SearchProductsResponse)
+	Handler(resp, req)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = json.Unmarshal(body, got)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if diff := cmp.Diff(got, want); diff != "" {
+		t.Errorf("got %v, want %v", got, want)
+	}
+}
+
+func TestWrongKey(t *testing.T) {
+	req := httptest.NewRequest("GET", "http://example.com/product?wrongkey=xxx", nil)
+	resp := httptest.NewRecorder()
+	Handler(resp, req)
+	if resp.Code != http.StatusBadRequest {
+		t.Errorf("should be bad request")
 	}
 }

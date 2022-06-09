@@ -14,5 +14,11 @@ spec:
   resources: {}
   runtime:
     image: fission/node-env
+    podspec:
+      containers:
+      - name: gcpdemo-nodejs
+        env:
+        - name: OTEL_COLLECTOR_ADDR
+          value: fission-collector-collector.observability.svc:4317
   terminationGracePeriod: 1
   version: 3

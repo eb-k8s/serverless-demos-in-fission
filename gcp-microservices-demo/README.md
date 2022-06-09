@@ -12,6 +12,25 @@ The application is a web-based e-commerce app where users can browse items, add 
 1. **Launch your k8s cluster and deploy the fission framework.**
 
 2. **Deploy fission functions:**
+
+You can add OpenTelemetry support for functions, by adding environment variable in environment yaml file:
+```
+env:
+- name: OTEL_COLLECTOR_ADDR
+  value: <OpenTelemetry Collector address>
+```
+If you don't want to add OpenTelemetry support for functions:
+```
+env:
+- name: OTEL_COLLECTOR_ADDR
+  value: ""
+```
+environment yaml file location: 
+- fission-deploy/specs/env-gcpdemo-go.yaml 
+- fission-deploy/specs/env-gcpdemo-nodejs.yaml 
+- fission-deploy/specs/env-gcpdemo-python.yaml
+
+After setting environment variables, deploy fission functions:
 ```
 cd fission-deploy && fission spec apply
 ```
