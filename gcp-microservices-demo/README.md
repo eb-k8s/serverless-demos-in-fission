@@ -25,6 +25,12 @@ env:
 - name: OTEL_COLLECTOR_ADDR
   value: ""
 ```
+DOMAIN is fission router entrypoint, please assign it if you want functions to communicate with each other:
+```
+env:
+- name: DOMAIN
+  value: <Fission Router Entrypoint>
+```
 environment yaml file location: 
 - fission-deploy/specs/env-gcpdemo-go.yaml 
 - fission-deploy/specs/env-gcpdemo-nodejs.yaml 
