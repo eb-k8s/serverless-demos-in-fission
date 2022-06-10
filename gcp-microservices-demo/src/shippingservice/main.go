@@ -77,7 +77,7 @@ func getTraceExporter(ctx context.Context) (*otlptrace.Exporter, error) {
 		log.Info("OTEL_COLLECTOR_ADDR not set, skipping Opentelemtry tracing")
 		return nil, nil
 	}
-	log.Infof("adservice with opentelemetry collector: %s\n", otel_collector_addr)
+	log.Infof("shippingservice with opentelemetry collector: %s\n", otel_collector_addr)
 	grpcOpts := []otlptracegrpc.Option{
 		otlptracegrpc.WithEndpoint(otel_collector_addr),
 		otlptracegrpc.WithDialOption(grpc.WithBlock()),
