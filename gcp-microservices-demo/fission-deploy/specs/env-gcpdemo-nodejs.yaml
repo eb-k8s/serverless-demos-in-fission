@@ -20,5 +20,7 @@ spec:
         env:
         - name: OTEL_COLLECTOR_ADDR
           value: fission-collector-collector.observability.svc:4317
+        - name: DOMAIN
+          value: router.fission.svc
   terminationGracePeriod: 1
   version: 3
