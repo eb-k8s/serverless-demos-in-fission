@@ -13,7 +13,7 @@ spec:
   poolsize: 5
   resources: {}
   runtime:
-    image: fission/python-env
+    image: fission/python-env-3.7
     podspec:
       containers:
       - name: gcpdemo-python
