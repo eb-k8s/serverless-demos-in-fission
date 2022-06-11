@@ -11,7 +11,8 @@ class TestRecommendationservice(unittest.TestCase):
         expect.sort()
         testrecommendationservice = rest.Recommendationservice("")  #use fake Productcatalogservice
         req = rest.ListRecommendationsRequest(user_id, product_ids)
-        resp = testrecommendationservice.listRecommendations(req).product_ids
+        headers = None
+        resp = testrecommendationservice.listRecommendations(headers, req).product_ids
         resp.sort()
         self.assertSequenceEqual(expect, resp, "the response is error!")
     
@@ -22,7 +23,8 @@ class TestRecommendationservice(unittest.TestCase):
         expect.sort()
         testrecommendationservice = rest.Recommendationservice("")  #use fake Productcatalogservice
         req = rest.ListRecommendationsRequest(user_id, product_ids)
-        resp = testrecommendationservice.listRecommendations(req).product_ids
+        headers = None
+        resp = testrecommendationservice.listRecommendations(headers, req).product_ids
         resp.sort()
         self.assertSequenceEqual(expect, resp, "the response is error!")
     
@@ -33,7 +35,8 @@ class TestRecommendationservice(unittest.TestCase):
         expect.sort()
         testrecommendationservice = rest.Recommendationservice("")  #use fake Productcatalogservice
         req = rest.ListRecommendationsRequest(user_id, product_ids)
-        resp = testrecommendationservice.listRecommendations(req).product_ids
+        headers = None
+        resp = testrecommendationservice.listRecommendations(headers, req).product_ids
         resp.sort()
         self.assertSequenceEqual(expect, resp, "the response is error!")
 

@@ -1,6 +1,9 @@
 import json
 import random
 import requests
+from otel import tracer
+from opentelemetry.propagate import extract
+from opentelemetry.trace import SpanKind
 
 class ListRecommendationsRequest:
     def __init__(self, user_id, product_ids):
@@ -103,13 +106,18 @@ class RealProductcatalogserviceClient:
     def __init__(self, productcatalogserviceHost):
         self.url = productcatalogserviceHost
 
-    def listProducts(self):
-        resp = requests.get(self.url)
-        try:
-            return dict2ListProductsResponse(json.loads(resp.text))
-        except Exception as e:
-            print(e)
-            return ListProductsResponse([])
+    def listProducts(self, headers):
+        with tracer.start_as_current_span("invoke ListProducts", context=extract(headers), kind=SpanKind.CLIENT) as span:
+            span.add_event("invoke ListProducts")
+            try:
+                raw_resp = requests.get(self.url, headers=headers)
+                resp = dict2ListProductsResponse(json.loads(raw_resp.text))
+                span.add_event("successfully invoke ListProducts")
+                return resp
+            except Exception as e:
+                print(e)
+                span.add_event("an error occurred in ListProducts")
+                return ListProductsResponse([])
 
 # For tests
 class FakeProductcatalogserviceClient:
@@ -149,7 +157,7 @@ class FakeProductcatalogserviceClient:
             )
         ]
     
-    def listProducts(self):
+    def listProducts(self, headers):
         return ListProductsResponse(self.products)
 
 class Recommendationservice:
@@ -159,11 +167,11 @@ class Recommendationservice:
         else:
             self.productcatalogserviceClient = RealProductcatalogserviceClient(productcatalogserviceHost)
     
-    def listRecommendations(self, listRecommendationsRequest):
+    def listRecommendations(self, headers, listRecommendationsRequest):
         print("ListRecommendations called with userId=" + listRecommendationsRequest.user_id)
         max_responses = 5
         # fetch list of products from productcatalogservice
-        cat_response = self.productcatalogserviceClient.listProducts()
+        cat_response = self.productcatalogserviceClient.listProducts(headers)
         product_ids = [x.id for x in cat_response.products]
         filtered_products = list(set(product_ids)-set(listRecommendationsRequest.product_ids))
         num_products = len(filtered_products)
