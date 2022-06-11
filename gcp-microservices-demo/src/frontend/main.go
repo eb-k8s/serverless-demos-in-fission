@@ -15,15 +15,27 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
 	"time"
 
+	"cloud.google.com/go/compute/metadata"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 	"go.opencensus.io/plugin/ochttp"
 	"go.opencensus.io/plugin/ochttp/propagation/b3"
+	"google.golang.org/grpc"
+
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/resource"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.10.0"
 )
 
 const (
@@ -37,6 +49,9 @@ const (
 )
 
 var (
+	svc                   *frontendServer
+	deploymentDetailsMap  map[string]string
+	log                   *logrus.Logger
 	whitelistedCurrencies = map[string]bool{
 		"USD": true,
 		"EUR": true,
@@ -49,6 +64,7 @@ var (
 type ctxKeySessionID struct{}
 
 type frontendServer struct {
+	httpClient            http.Client
 	productCatalogSvcAddr string
 	currencySvcAddr       string
 	cartSvcAddr           string
@@ -58,8 +74,61 @@ type frontendServer struct {
 	adSvcAddr             string
 }
 
-func main() {
-	log := logrus.New()
+// Initializes an OTLP exporter, and configures the corresponding trace and
+// metric providers.
+func initProvider() {
+	ctx := context.Background()
+	// Get Resource
+	res := resource.NewWithAttributes(semconv.SchemaURL, semconv.ServiceNameKey.String("frontend"))
+
+	// Get Exporter
+	traceExporter, err := getTraceExporter(ctx)
+	if err != nil {
+		log.Fatalf("%s: %v", "failed to create trace exporter", err)
+	}
+
+	// Register the trace exporter with a TracerProvider, using a batch
+	// span processor to aggregate spans before export.
+	tracerProvider := sdktrace.NewTracerProvider(
+		sdktrace.WithResource(res),
+		sdktrace.WithSampler(sdktrace.AlwaysSample()),
+	)
+	if traceExporter != nil {
+		bsp := sdktrace.NewBatchSpanProcessor(traceExporter)
+		tracerProvider.RegisterSpanProcessor(bsp)
+	}
+	otel.SetTracerProvider(tracerProvider)
+
+	// set global propagator to tracecontext (the default is no-op).
+	propagators := []propagation.TextMapPropagator{
+		propagation.TraceContext{},
+		propagation.Baggage{},
+	}
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagators...))
+}
+
+func getTraceExporter(ctx context.Context) (*otlptrace.Exporter, error) {
+	otel_collector_addr := os.Getenv("OTEL_COLLECTOR_ADDR")
+	if otel_collector_addr == "" {
+		log.Info("OTEL_COLLECTOR_ADDR not set, skipping Opentelemtry tracing")
+		return nil, nil
+	}
+	log.Infof("adservice with opentelemetry collector: %s\n", otel_collector_addr)
+	grpcOpts := []otlptracegrpc.Option{
+		otlptracegrpc.WithEndpoint(otel_collector_addr),
+		otlptracegrpc.WithDialOption(grpc.WithBlock()),
+		otlptracegrpc.WithInsecure(),
+	}
+	// Set up a trace exporter
+	traceExporter, err := otlptracegrpc.New(ctx, grpcOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return traceExporter, nil
+}
+
+func init() {
+	log = logrus.New()
 	log.Level = logrus.DebugLevel
 	log.Formatter = &logrus.JSONFormatter{
 		FieldMap: logrus.FieldMap{
@@ -71,12 +140,9 @@ func main() {
 	}
 	log.Out = os.Stdout
 
-	srvPort := port
-	if os.Getenv("PORT") != "" {
-		srvPort = os.Getenv("PORT")
-	}
-	addr := os.Getenv("LISTEN_ADDR")
-	svc := new(frontendServer)
+	initProvider()
+
+	svc = new(frontendServer)
 	mustMapEnv(&svc.productCatalogSvcAddr, "PRODUCT_CATALOG_SERVICE_ADDR")
 	mustMapEnv(&svc.currencySvcAddr, "CURRENCY_SERVICE_ADDR")
 	mustMapEnv(&svc.cartSvcAddr, "CART_SERVICE_ADDR")
@@ -84,6 +150,19 @@ func main() {
 	mustMapEnv(&svc.checkoutSvcAddr, "CHECKOUT_SERVICE_ADDR")
 	mustMapEnv(&svc.shippingSvcAddr, "SHIPPING_SERVICE_ADDR")
 	mustMapEnv(&svc.adSvcAddr, "AD_SERVICE_ADDR")
+	svc.httpClient = http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)}
+
+	// Use a goroutine to ensure loadDeploymentDetails()'s GCP API
+	// calls don't block non-GCP deployments. See issue #685.
+	go loadDeploymentDetails()
+}
+
+func main() {
+	srvPort := port
+	if os.Getenv("PORT") != "" {
+		srvPort = os.Getenv("PORT")
+	}
+	addr := os.Getenv("LISTEN_ADDR")
 
 	r := mux.NewRouter()
 	r.HandleFunc("/", svc.homeHandler).Methods(http.MethodGet, http.MethodHead)
@@ -115,4 +194,34 @@ func mustMapEnv(target *string, envKey string) {
 		panic(fmt.Sprintf("environment variable %q not set", envKey))
 	}
 	*target = v
+}
+
+func loadDeploymentDetails() {
+	deploymentDetailsMap = make(map[string]string)
+	var metaServerClient = metadata.NewClient(&http.Client{})
+
+	podHostname, err := os.Hostname()
+	if err != nil {
+		log.Error("Failed to fetch the hostname for the Pod", err)
+	}
+
+	podCluster, err := metaServerClient.InstanceAttributeValue("cluster-name")
+	if err != nil {
+		log.Error("Failed to fetch the name of the cluster in which the pod is running", err)
+	}
+
+	podZone, err := metaServerClient.Zone()
+	if err != nil {
+		log.Error("Failed to fetch the Zone of the node where the pod is scheduled", err)
+	}
+
+	deploymentDetailsMap["HOSTNAME"] = podHostname
+	deploymentDetailsMap["CLUSTERNAME"] = podCluster
+	deploymentDetailsMap["ZONE"] = podZone
+
+	log.WithFields(logrus.Fields{
+		"cluster":  podCluster,
+		"zone":     podZone,
+		"hostname": podHostname,
+	}).Debug("Loaded deployment details")
 }

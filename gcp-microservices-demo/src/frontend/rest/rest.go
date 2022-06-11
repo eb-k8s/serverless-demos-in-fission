@@ -2,6 +2,7 @@ package rest
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -172,9 +173,13 @@ func (m *Money) GetNanos() int32 {
 	return 0
 }
 
-func GetSupportedCurrencies(currencySvcAddr string) (*GetSupportedCurrenciesResponse, error) {
+func GetSupportedCurrencies(ctx context.Context, client http.Client, currencySvcAddr string) (*GetSupportedCurrenciesResponse, error) {
 	out := new(GetSupportedCurrenciesResponse)
-	res, err := http.Get(currencySvcAddr)
+	req, err := http.NewRequestWithContext(ctx, "GET", currencySvcAddr, nil)
+	if err != nil {
+		return nil, err
+	}
+	res, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -190,9 +195,13 @@ func GetSupportedCurrencies(currencySvcAddr string) (*GetSupportedCurrenciesResp
 	return out, nil
 }
 
-func ListProducts(productCatalogSvcAddr string) (*ListProductsResponse, error) {
+func ListProducts(ctx context.Context, client http.Client, productCatalogSvcAddr string) (*ListProductsResponse, error) {
 	out := new(ListProductsResponse)
-	res, err := http.Get(productCatalogSvcAddr)
+	req, err := http.NewRequestWithContext(ctx, "GET", productCatalogSvcAddr, nil)
+	if err != nil {
+		return nil, err
+	}
+	res, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -215,11 +224,15 @@ func (m *ListProductsResponse) GetProducts() []*Product {
 	return nil
 }
 
-func GetProduct(productCatalogSvcAddr string, in *GetProductRequest) (*Product, error) {
+func GetProduct(ctx context.Context, client http.Client, productCatalogSvcAddr string, in *GetProductRequest) (*Product, error) {
 	out := new(Product)
 	v := url.Values{}
 	v.Add("id", in.Id)
-	res, err := http.Get(productCatalogSvcAddr + "?" + v.Encode())
+	req, err := http.NewRequestWithContext(ctx, "GET", productCatalogSvcAddr+"?"+v.Encode(), nil)
+	if err != nil {
+		return nil, err
+	}
+	res, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -235,11 +248,15 @@ func GetProduct(productCatalogSvcAddr string, in *GetProductRequest) (*Product, 
 	return out, nil
 }
 
-func GetCart(cartSvcAddr string, in *GetCartRequest) (*Cart, error) {
+func GetCart(ctx context.Context, client http.Client, cartSvcAddr string, in *GetCartRequest) (*Cart, error) {
 	out := new(Cart)
 	v := url.Values{}
 	v.Add("user_id", in.UserId)
-	res, err := http.Get(cartSvcAddr + "?" + v.Encode())
+	req, err := http.NewRequestWithContext(ctx, "GET", cartSvcAddr+"?"+v.Encode(), nil)
+	if err != nil {
+		return nil, err
+	}
+	res, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -262,39 +279,54 @@ func (m *Cart) GetItems() []*CartItem {
 	return nil
 }
 
-func EmptyCart(cartSvcAddr string, in *EmptyCartRequest) error {
+func EmptyCart(ctx context.Context, client http.Client, cartSvcAddr string, in *EmptyCartRequest) error {
 	payload, err := json.Marshal(in)
 	if err != nil {
 		return err
 	}
-	req, err := http.NewRequest("DELETE", cartSvcAddr, bytes.NewBuffer(payload))
+	req, err := http.NewRequestWithContext(ctx, "DELETE", cartSvcAddr, bytes.NewBuffer(payload))
 	if err != nil {
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	_, err = http.DefaultClient.Do(req)
+	res, err := client.Do(req)
 	if err != nil {
 		return err
 	}
+	defer res.Body.Close()
 	return nil
 }
 
-func AddItem(cartSvcAddr string, in *AddItemRequest) error {
+func AddItem(ctx context.Context, client http.Client, cartSvcAddr string, in *AddItemRequest) error {
 	payload, err := json.Marshal(in)
 	if err != nil {
 		return err
 	}
-	_, err = http.Post(cartSvcAddr, "application/json", bytes.NewBuffer(payload))
-	return err
+	req, err := http.NewRequestWithContext(ctx, "POST", cartSvcAddr, bytes.NewBuffer(payload))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	res, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+	return nil
 }
 
-func Convert(currencySvcAddr string, in *CurrencyConversionRequest) (*Money, error) {
+func Convert(ctx context.Context, client http.Client, currencySvcAddr string, in *CurrencyConversionRequest) (*Money, error) {
 	out := new(Money)
 	payload, err := json.Marshal(in)
 	if err != nil {
 		return nil, err
 	}
-	res, err := http.Post(currencySvcAddr, "application/json", bytes.NewBuffer(payload))
+	req, err := http.NewRequestWithContext(ctx, "POST", currencySvcAddr, bytes.NewBuffer(payload))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	res, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -310,13 +342,18 @@ func Convert(currencySvcAddr string, in *CurrencyConversionRequest) (*Money, err
 	return out, nil
 }
 
-func GetQuote(shippingSvcAddr string, in *GetQuoteRequest) (*GetQuoteResponse, error) {
+func GetQuote(ctx context.Context, client http.Client, shippingSvcAddr string, in *GetQuoteRequest) (*GetQuoteResponse, error) {
 	out := new(GetQuoteResponse)
 	payload, err := json.Marshal(in)
 	if err != nil {
 		return nil, err
 	}
-	res, err := http.Post(shippingSvcAddr, "application/json", bytes.NewBuffer(payload))
+	req, err := http.NewRequestWithContext(ctx, "POST", shippingSvcAddr, bytes.NewBuffer(payload))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	res, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -346,12 +383,16 @@ func (m *ListRecommendationsResponse) GetProductIds() []string {
 	return nil
 }
 
-func ListRecommendations(recommendationSvcAddr string, in *ListRecommendationsRequest) (*ListRecommendationsResponse, error) {
+func ListRecommendations(ctx context.Context, client http.Client, recommendationSvcAddr string, in *ListRecommendationsRequest) (*ListRecommendationsResponse, error) {
 	out := new(ListRecommendationsResponse)
 	v := url.Values{}
 	v.Add("user_id", in.UserId)
 	v.Add("product_ids", strings.Join(in.ProductIds, ","))
-	res, err := http.Get(recommendationSvcAddr + "?" + v.Encode())
+	req, err := http.NewRequestWithContext(ctx, "GET", recommendationSvcAddr+"?"+v.Encode(), nil)
+	if err != nil {
+		return nil, err
+	}
+	res, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -367,11 +408,15 @@ func ListRecommendations(recommendationSvcAddr string, in *ListRecommendationsRe
 	return out, nil
 }
 
-func GetAds(adSvcAddr string, in *AdRequest) (*AdResponse, error) {
+func GetAds(ctx context.Context, client http.Client, adSvcAddr string, in *AdRequest) (*AdResponse, error) {
 	out := new(AdResponse)
 	v := url.Values{}
 	v.Add("context_keys", strings.Join(in.ContextKeys, ","))
-	res, err := http.Get(adSvcAddr + "?" + v.Encode())
+	req, err := http.NewRequestWithContext(ctx, "GET", adSvcAddr+"?"+v.Encode(), nil)
+	if err != nil {
+		return nil, err
+	}
+	res, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -387,13 +432,18 @@ func GetAds(adSvcAddr string, in *AdRequest) (*AdResponse, error) {
 	return out, nil
 }
 
-func PlaceOrder(checkoutSvcAddr string, in *PlaceOrderRequest) (*PlaceOrderResponse, error) {
+func PlaceOrder(ctx context.Context, client http.Client, checkoutSvcAddr string, in *PlaceOrderRequest) (*PlaceOrderResponse, error) {
 	out := new(PlaceOrderResponse)
 	payload, err := json.Marshal(in)
 	if err != nil {
 		return nil, err
 	}
-	res, err := http.Post(checkoutSvcAddr, "application/json", bytes.NewBuffer(payload))
+	req, err := http.NewRequestWithContext(ctx, "POST", checkoutSvcAddr, bytes.NewBuffer(payload))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	res, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}

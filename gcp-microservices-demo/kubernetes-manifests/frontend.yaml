@@ -17,9 +17,10 @@ spec:
       labels:
         app: frontend
     spec:
+      nodeName: eb70170
       containers:
         - name: server
-          image: registry.cn-beijing.aliyuncs.com/eb-k8s/frontend:v1.0.0
+          image: registry.cn-beijing.aliyuncs.com/eb-k8s/frontend-with-otel:v1.0.0
           imagePullPolicy: IfNotPresent
           ports:
           - containerPort: 8080
@@ -42,20 +43,22 @@ spec:
           env:
           - name: PORT
             value: "8080"
+          - name: OTEL_COLLECTOR_ADDR
+            value: "fission-collector-collector.observability.svc:4317" 
           - name: PRODUCT_CATALOG_SERVICE_ADDR
-            value: "http://router.fission.svc.cluster.local/product"
+            value: "http://router.fission.svc/product"
           - name: CURRENCY_SERVICE_ADDR
-            value: "http://router.fission.svc.cluster.local/currency"
+            value: "http://router.fission.svc/currency"
           - name: CART_SERVICE_ADDR
-            value: "http://router.fission.svc.cluster.local/cart"
+            value: "http://router.fission.svc/cart"
           - name: RECOMMENDATION_SERVICE_ADDR
-            value: "http://router.fission.svc.cluster.local/recommendation"
+            value: "http://router.fission.svc/recommendation"
           - name: SHIPPING_SERVICE_ADDR
-            value: "http://router.fission.svc.cluster.local/shipping"
+            value: "http://router.fission.svc/shipping"
           - name: CHECKOUT_SERVICE_ADDR
-            value: "http://router.fission.svc.cluster.local/checkout"
+            value: "http://router.fission.svc/checkout"
           - name: AD_SERVICE_ADDR
-            value: "http://router.fission.svc.cluster.local/ad"
+            value: "http://router.fission.svc/ad"
           resources:
             requests:
               cpu: 100m

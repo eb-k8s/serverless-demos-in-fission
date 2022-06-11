@@ -32,6 +32,10 @@ import (
 
 	"github.com/eb-k8s/serverless-demos-in-fission/gcp-microservices-demo/src/frontend/money"
 	"github.com/eb-k8s/serverless-demos-in-fission/gcp-microservices-demo/src/frontend/rest"
+
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type platformDetails struct {
@@ -52,19 +56,37 @@ var (
 var validEnvs = []string{"local", "gcp", "azure", "aws", "onprem", "alibaba"}
 
 func (fe *frontendServer) homeHandler(w http.ResponseWriter, r *http.Request) {
+	var tracer trace.Tracer
+	if span := trace.SpanFromContext(r.Context()); span.SpanContext().IsValid() {
+		tracer = span.TracerProvider().Tracer("")
+	} else {
+		tracer = otel.GetTracerProvider().Tracer("")
+	}
+	// Extract context from carrier
+	propagators := otel.GetTextMapPropagator()
+	ctx := propagators.Extract(r.Context(), propagation.HeaderCarrier(r.Header))
+	// Start a span
+	ctx, span := tracer.Start(
+		ctx,
+		"/",
+		trace.WithSpanKind(trace.SpanKindServer),
+	)
+	defer span.End()
+
+	span.AddEvent("handle request")
 	log := r.Context().Value(ctxKeyLog{}).(logrus.FieldLogger)
 	log.WithField("currency", currentCurrency(r)).Info("home")
-	currencies, err := fe.getCurrencies()
+	currencies, err := fe.getCurrencies(ctx, tracer)
 	if err != nil {
 		renderHTTPError(log, r, w, errors.Wrap(err, "could not retrieve currencies"), http.StatusInternalServerError)
 		return
 	}
-	products, err := fe.getProducts()
+	products, err := fe.getProducts(ctx, tracer)
 	if err != nil {
 		renderHTTPError(log, r, w, errors.Wrap(err, "could not retrieve products"), http.StatusInternalServerError)
 		return
 	}
-	cart, err := fe.getCart(sessionID(r))
+	cart, err := fe.getCart(ctx, tracer, sessionID(r))
 	if err != nil {
 		renderHTTPError(log, r, w, errors.Wrap(err, "could not retrieve cart"), http.StatusInternalServerError)
 		return
@@ -76,7 +98,7 @@ func (fe *frontendServer) homeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	ps := make([]productView, len(products))
 	for i, p := range products {
-		price, err := fe.convertCurrency(p.GetPriceUsd(), currentCurrency(r))
+		price, err := fe.convertCurrency(ctx, tracer, p.GetPriceUsd(), currentCurrency(r))
 		if err != nil {
 			renderHTTPError(log, r, w, errors.Wrapf(err, "failed to do currency conversion for product %s", p.GetId()), http.StatusInternalServerError)
 			return
@@ -111,7 +133,7 @@ func (fe *frontendServer) homeHandler(w http.ResponseWriter, r *http.Request) {
 		"products":          ps,
 		"cart_size":         cartSize(cart),
 		"banner_color":      os.Getenv("BANNER_COLOR"), // illustrates canary deployments
-		"ad":                fe.chooseAd(r.Context(), []string{}, log),
+		"ad":                fe.chooseAd(ctx, tracer, []string{}, log),
 		"platform_css":      plat.css,
 		"platform_name":     plat.provider,
 		"is_cymbal_brand":   isCymbalBrand,
@@ -119,6 +141,7 @@ func (fe *frontendServer) homeHandler(w http.ResponseWriter, r *http.Request) {
 	}); err != nil {
 		log.Error(err)
 	}
+	span.AddEvent("successfully handle request")
 }
 
 func (plat *platformDetails) setPlatformDetails(env string) {
@@ -144,6 +167,24 @@ func (plat *platformDetails) setPlatformDetails(env string) {
 }
 
 func (fe *frontendServer) productHandler(w http.ResponseWriter, r *http.Request) {
+	var tracer trace.Tracer
+	if span := trace.SpanFromContext(r.Context()); span.SpanContext().IsValid() {
+		tracer = span.TracerProvider().Tracer("")
+	} else {
+		tracer = otel.GetTracerProvider().Tracer("")
+	}
+	// Extract context from carrier
+	propagators := otel.GetTextMapPropagator()
+	ctx := propagators.Extract(r.Context(), propagation.HeaderCarrier(r.Header))
+	// Start a span
+	ctx, span := tracer.Start(
+		ctx,
+		"/product/{id}",
+		trace.WithSpanKind(trace.SpanKindServer),
+	)
+	defer span.End()
+
+	span.AddEvent("handle request")
 	log := r.Context().Value(ctxKeyLog{}).(logrus.FieldLogger)
 	id := mux.Vars(r)["id"]
 	if id == "" {
@@ -153,30 +194,30 @@ func (fe *frontendServer) productHandler(w http.ResponseWriter, r *http.Request)
 	log.WithField("id", id).WithField("currency", currentCurrency(r)).
 		Debug("serving product page")
 
-	p, err := fe.getProduct(id)
+	p, err := fe.getProduct(ctx, tracer, id)
 	if err != nil {
 		renderHTTPError(log, r, w, errors.Wrap(err, "could not retrieve product"), http.StatusInternalServerError)
 		return
 	}
-	currencies, err := fe.getCurrencies()
+	currencies, err := fe.getCurrencies(ctx, tracer)
 	if err != nil {
 		renderHTTPError(log, r, w, errors.Wrap(err, "could not retrieve currencies"), http.StatusInternalServerError)
 		return
 	}
 
-	cart, err := fe.getCart(sessionID(r))
+	cart, err := fe.getCart(ctx, tracer, sessionID(r))
 	if err != nil {
 		renderHTTPError(log, r, w, errors.Wrap(err, "could not retrieve cart"), http.StatusInternalServerError)
 		return
 	}
 
-	price, err := fe.convertCurrency(p.GetPriceUsd(), currentCurrency(r))
+	price, err := fe.convertCurrency(ctx, tracer, p.GetPriceUsd(), currentCurrency(r))
 	if err != nil {
 		renderHTTPError(log, r, w, errors.Wrap(err, "failed to convert currency"), http.StatusInternalServerError)
 		return
 	}
 
-	recommendations, err := fe.getRecommendations(sessionID(r), []string{id})
+	recommendations, err := fe.getRecommendations(ctx, tracer, sessionID(r), []string{id})
 	if err != nil {
 		renderHTTPError(log, r, w, errors.Wrap(err, "failed to get product recommendations"), http.StatusInternalServerError)
 		return
@@ -190,7 +231,7 @@ func (fe *frontendServer) productHandler(w http.ResponseWriter, r *http.Request)
 	if err := templates.ExecuteTemplate(w, "product", map[string]interface{}{
 		"session_id":        sessionID(r),
 		"request_id":        r.Context().Value(ctxKeyRequestID{}),
-		"ad":                fe.chooseAd(r.Context(), p.Categories, log),
+		"ad":                fe.chooseAd(ctx, tracer, p.Categories, log),
 		"user_currency":     currentCurrency(r),
 		"show_currency":     true,
 		"currencies":        currencies,
@@ -204,9 +245,28 @@ func (fe *frontendServer) productHandler(w http.ResponseWriter, r *http.Request)
 	}); err != nil {
 		log.Println(err)
 	}
+	span.AddEvent("successfully handle request")
 }
 
 func (fe *frontendServer) addToCartHandler(w http.ResponseWriter, r *http.Request) {
+	var tracer trace.Tracer
+	if span := trace.SpanFromContext(r.Context()); span.SpanContext().IsValid() {
+		tracer = span.TracerProvider().Tracer("")
+	} else {
+		tracer = otel.GetTracerProvider().Tracer("")
+	}
+	// Extract context from carrier
+	propagators := otel.GetTextMapPropagator()
+	ctx := propagators.Extract(r.Context(), propagation.HeaderCarrier(r.Header))
+	// Start a span
+	ctx, span := tracer.Start(
+		ctx,
+		"POST /cart",
+		trace.WithSpanKind(trace.SpanKindServer),
+	)
+	defer span.End()
+
+	span.AddEvent("handle request")
 	log := r.Context().Value(ctxKeyLog{}).(logrus.FieldLogger)
 	quantity, _ := strconv.ParseUint(r.FormValue("quantity"), 10, 32)
 	productID := r.FormValue("product_id")
@@ -216,53 +276,91 @@ func (fe *frontendServer) addToCartHandler(w http.ResponseWriter, r *http.Reques
 	}
 	log.WithField("product", productID).WithField("quantity", quantity).Debug("adding to cart")
 
-	p, err := fe.getProduct(productID)
+	p, err := fe.getProduct(ctx, tracer, productID)
 	if err != nil {
 		renderHTTPError(log, r, w, errors.Wrap(err, "could not retrieve product"), http.StatusInternalServerError)
 		return
 	}
 
-	if err := fe.insertCart(sessionID(r), p.GetId(), int32(quantity)); err != nil {
+	if err := fe.insertCart(ctx, tracer, sessionID(r), p.GetId(), int32(quantity)); err != nil {
 		renderHTTPError(log, r, w, errors.Wrap(err, "failed to add to cart"), http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("location", "/cart")
 	w.WriteHeader(http.StatusFound)
+	span.AddEvent("successfully handle request")
 }
 
 func (fe *frontendServer) emptyCartHandler(w http.ResponseWriter, r *http.Request) {
+	var tracer trace.Tracer
+	if span := trace.SpanFromContext(r.Context()); span.SpanContext().IsValid() {
+		tracer = span.TracerProvider().Tracer("")
+	} else {
+		tracer = otel.GetTracerProvider().Tracer("")
+	}
+	// Extract context from carrier
+	propagators := otel.GetTextMapPropagator()
+	ctx := propagators.Extract(r.Context(), propagation.HeaderCarrier(r.Header))
+	// Start a span
+	ctx, span := tracer.Start(
+		ctx,
+		"/cart/empty",
+		trace.WithSpanKind(trace.SpanKindServer),
+	)
+	defer span.End()
+
+	span.AddEvent("handle request")
 	log := r.Context().Value(ctxKeyLog{}).(logrus.FieldLogger)
 	log.Debug("emptying cart")
 
-	if err := fe.emptyCart(sessionID(r)); err != nil {
+	if err := fe.emptyCart(ctx, tracer, sessionID(r)); err != nil {
 		renderHTTPError(log, r, w, errors.Wrap(err, "failed to empty cart"), http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("location", "/")
 	w.WriteHeader(http.StatusFound)
+	span.AddEvent("successfully handle request")
 }
 
 func (fe *frontendServer) viewCartHandler(w http.ResponseWriter, r *http.Request) {
+	var tracer trace.Tracer
+	if span := trace.SpanFromContext(r.Context()); span.SpanContext().IsValid() {
+		tracer = span.TracerProvider().Tracer("")
+	} else {
+		tracer = otel.GetTracerProvider().Tracer("")
+	}
+	// Extract context from carrier
+	propagators := otel.GetTextMapPropagator()
+	ctx := propagators.Extract(r.Context(), propagation.HeaderCarrier(r.Header))
+	// Start a span
+	ctx, span := tracer.Start(
+		ctx,
+		"GET /cart",
+		trace.WithSpanKind(trace.SpanKindServer),
+	)
+	defer span.End()
+
+	span.AddEvent("handle request")
 	log := r.Context().Value(ctxKeyLog{}).(logrus.FieldLogger)
 	log.Debug("view user cart")
-	currencies, err := fe.getCurrencies()
+	currencies, err := fe.getCurrencies(ctx, tracer)
 	if err != nil {
 		renderHTTPError(log, r, w, errors.Wrap(err, "could not retrieve currencies"), http.StatusInternalServerError)
 		return
 	}
-	cart, err := fe.getCart(sessionID(r))
+	cart, err := fe.getCart(ctx, tracer, sessionID(r))
 	if err != nil {
 		renderHTTPError(log, r, w, errors.Wrap(err, "could not retrieve cart"), http.StatusInternalServerError)
 		return
 	}
 
-	recommendations, err := fe.getRecommendations(sessionID(r), cartIDs(cart))
+	recommendations, err := fe.getRecommendations(ctx, tracer, sessionID(r), cartIDs(cart))
 	if err != nil {
 		renderHTTPError(log, r, w, errors.Wrap(err, "failed to get product recommendations"), http.StatusInternalServerError)
 		return
 	}
 
-	shippingCost, err := fe.getShippingQuote(cart, currentCurrency(r))
+	shippingCost, err := fe.getShippingQuote(ctx, tracer, cart, currentCurrency(r))
 	if err != nil {
 		renderHTTPError(log, r, w, errors.Wrap(err, "failed to get shipping quote"), http.StatusInternalServerError)
 		return
@@ -276,12 +374,12 @@ func (fe *frontendServer) viewCartHandler(w http.ResponseWriter, r *http.Request
 	items := make([]cartItemView, len(cart))
 	totalPrice := rest.Money{CurrencyCode: currentCurrency(r)}
 	for i, item := range cart {
-		p, err := fe.getProduct(item.GetProductId())
+		p, err := fe.getProduct(ctx, tracer, item.GetProductId())
 		if err != nil {
 			renderHTTPError(log, r, w, errors.Wrapf(err, "could not retrieve product #%s", item.GetProductId()), http.StatusInternalServerError)
 			return
 		}
-		price, err := fe.convertCurrency(p.GetPriceUsd(), currentCurrency(r))
+		price, err := fe.convertCurrency(ctx, tracer, p.GetPriceUsd(), currentCurrency(r))
 		if err != nil {
 			renderHTTPError(log, r, w, errors.Wrapf(err, "could not convert currency for product #%s", item.GetProductId()), http.StatusInternalServerError)
 			return
@@ -316,9 +414,28 @@ func (fe *frontendServer) viewCartHandler(w http.ResponseWriter, r *http.Request
 	}); err != nil {
 		log.Println(err)
 	}
+	span.AddEvent("successfully handle request")
 }
 
 func (fe *frontendServer) placeOrderHandler(w http.ResponseWriter, r *http.Request) {
+	var tracer trace.Tracer
+	if span := trace.SpanFromContext(r.Context()); span.SpanContext().IsValid() {
+		tracer = span.TracerProvider().Tracer("")
+	} else {
+		tracer = otel.GetTracerProvider().Tracer("")
+	}
+	// Extract context from carrier
+	propagators := otel.GetTextMapPropagator()
+	ctx := propagators.Extract(r.Context(), propagation.HeaderCarrier(r.Header))
+	// Start a span
+	ctx, span := tracer.Start(
+		ctx,
+		"/cart/checkout",
+		trace.WithSpanKind(trace.SpanKindServer),
+	)
+	defer span.End()
+
+	span.AddEvent("handle request")
 	log := r.Context().Value(ctxKeyLog{}).(logrus.FieldLogger)
 	log.Debug("placing order")
 
@@ -335,7 +452,13 @@ func (fe *frontendServer) placeOrderHandler(w http.ResponseWriter, r *http.Reque
 		ccCVV, _      = strconv.ParseInt(r.FormValue("credit_card_cvv"), 10, 32)
 	)
 
-	order, err := rest.PlaceOrder(fe.checkoutSvcAddr, &rest.PlaceOrderRequest{
+	// Start a span
+	ctx_placeorder, span_placeorder := tracer.Start(
+		ctx,
+		"invoke PlaceOrder",
+		trace.WithSpanKind(trace.SpanKindClient),
+	)
+	order, err := rest.PlaceOrder(ctx_placeorder, svc.httpClient, fe.checkoutSvcAddr, &rest.PlaceOrderRequest{
 		Email: email,
 		CreditCard: &rest.CreditCardInfo{
 			CreditCardNumber:          ccNumber,
@@ -353,12 +476,16 @@ func (fe *frontendServer) placeOrderHandler(w http.ResponseWriter, r *http.Reque
 	})
 	if err != nil {
 		renderHTTPError(log, r, w, errors.Wrap(err, "failed to complete the order"), http.StatusInternalServerError)
+		span_placeorder.AddEvent("an error occurred in PlaceOrder")
+		span_placeorder.End()
 		return
 	}
 	log.WithField("order", order.GetOrder().GetOrderId()).Info("order placed")
+	span_placeorder.AddEvent("successfully invoke PlaceOrder")
+	span_placeorder.End()
 
 	order.GetOrder().GetItems()
-	recommendations, _ := fe.getRecommendations(sessionID(r), nil)
+	recommendations, _ := fe.getRecommendations(ctx, tracer, sessionID(r), nil)
 
 	totalPaid := *order.GetOrder().GetShippingCost()
 	for _, v := range order.GetOrder().GetItems() {
@@ -366,7 +493,7 @@ func (fe *frontendServer) placeOrderHandler(w http.ResponseWriter, r *http.Reque
 		totalPaid = money.Must(money.Sum(totalPaid, multPrice))
 	}
 
-	currencies, err := fe.getCurrencies()
+	currencies, err := fe.getCurrencies(ctx, tracer)
 	if err != nil {
 		renderHTTPError(log, r, w, errors.Wrap(err, "could not retrieve currencies"), http.StatusInternalServerError)
 		return
@@ -388,9 +515,28 @@ func (fe *frontendServer) placeOrderHandler(w http.ResponseWriter, r *http.Reque
 	}); err != nil {
 		log.Println(err)
 	}
+	span.AddEvent("successfully handle request")
 }
 
 func (fe *frontendServer) logoutHandler(w http.ResponseWriter, r *http.Request) {
+	var tracer trace.Tracer
+	if span := trace.SpanFromContext(r.Context()); span.SpanContext().IsValid() {
+		tracer = span.TracerProvider().Tracer("")
+	} else {
+		tracer = otel.GetTracerProvider().Tracer("")
+	}
+	// Extract context from carrier
+	propagators := otel.GetTextMapPropagator()
+	ctx := propagators.Extract(r.Context(), propagation.HeaderCarrier(r.Header))
+	// Start a span
+	ctx, span := tracer.Start(
+		ctx,
+		"/logout",
+		trace.WithSpanKind(trace.SpanKindServer),
+	)
+	defer span.End()
+
+	span.AddEvent("handle request")
 	log := r.Context().Value(ctxKeyLog{}).(logrus.FieldLogger)
 	log.Debug("logging out")
 	for _, c := range r.Cookies() {
@@ -400,9 +546,28 @@ func (fe *frontendServer) logoutHandler(w http.ResponseWriter, r *http.Request) 
 	}
 	w.Header().Set("Location", "/")
 	w.WriteHeader(http.StatusFound)
+	span.AddEvent("successfully handle request")
 }
 
 func (fe *frontendServer) setCurrencyHandler(w http.ResponseWriter, r *http.Request) {
+	var tracer trace.Tracer
+	if span := trace.SpanFromContext(r.Context()); span.SpanContext().IsValid() {
+		tracer = span.TracerProvider().Tracer("")
+	} else {
+		tracer = otel.GetTracerProvider().Tracer("")
+	}
+	// Extract context from carrier
+	propagators := otel.GetTextMapPropagator()
+	ctx := propagators.Extract(r.Context(), propagation.HeaderCarrier(r.Header))
+	// Start a span
+	ctx, span := tracer.Start(
+		ctx,
+		"/setCurrency",
+		trace.WithSpanKind(trace.SpanKindServer),
+	)
+	defer span.End()
+
+	span.AddEvent("handle request")
 	log := r.Context().Value(ctxKeyLog{}).(logrus.FieldLogger)
 	cur := r.FormValue("currency_code")
 	log.WithField("curr.new", cur).WithField("curr.old", currentCurrency(r)).
@@ -421,12 +586,13 @@ func (fe *frontendServer) setCurrencyHandler(w http.ResponseWriter, r *http.Requ
 	}
 	w.Header().Set("Location", referer)
 	w.WriteHeader(http.StatusFound)
+	span.AddEvent("successfully handle request")
 }
 
 // chooseAd queries for advertisements available and randomly chooses one, if
 // available. It ignores the error retrieving the ad since it is not critical.
-func (fe *frontendServer) chooseAd(ctx context.Context, ctxKeys []string, log logrus.FieldLogger) *rest.Ad {
-	ads, err := fe.getAd(ctxKeys)
+func (fe *frontendServer) chooseAd(ctx context.Context, tracer trace.Tracer, ctxKeys []string, log logrus.FieldLogger) *rest.Ad {
+	ads, err := fe.getAd(ctx, tracer, ctxKeys)
 	if err != nil {
 		log.WithField("error", err).Warn("failed to retrieve ads")
 		return nil
