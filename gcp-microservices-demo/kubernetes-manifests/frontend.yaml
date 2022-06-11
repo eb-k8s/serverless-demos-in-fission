@@ -17,7 +17,6 @@ spec:
       labels:
         app: frontend
     spec:
-      nodeName: eb70170
       containers:
         - name: server
           image: registry.cn-beijing.aliyuncs.com/eb-k8s/frontend-with-otel:v1.0.0
