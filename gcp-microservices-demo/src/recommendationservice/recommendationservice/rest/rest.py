@@ -1,7 +1,7 @@
 import json
 import random
 import requests
-from otel import tracer
+from otel import tracer, with_otel
 from opentelemetry.propagate import extract
 from opentelemetry.trace import SpanKind
 
@@ -110,7 +110,11 @@ class RealProductcatalogserviceClient:
         with tracer.start_as_current_span("invoke ListProducts", context=extract(headers), kind=SpanKind.CLIENT) as span:
             span.add_event("invoke ListProducts")
             try:
-                raw_resp = requests.get(self.url, headers=headers)
+                raw_resp = None
+                if with_otel:
+                    raw_resp = requests.get(self.url, headers=headers)
+                else:
+                    raw_resp = requests.get(self.url)
                 resp = dict2ListProductsResponse(json.loads(raw_resp.text))
                 span.add_event("successfully invoke ListProducts")
                 return resp

@@ -52,6 +52,7 @@ var (
 	svc                   *frontendServer
 	deploymentDetailsMap  map[string]string
 	log                   *logrus.Logger
+	withOtel              bool
 	whitelistedCurrencies = map[string]bool{
 		"USD": true,
 		"EUR": true,
@@ -111,9 +112,11 @@ func getTraceExporter(ctx context.Context) (*otlptrace.Exporter, error) {
 	otel_collector_addr := os.Getenv("OTEL_COLLECTOR_ADDR")
 	if otel_collector_addr == "" {
 		log.Info("OTEL_COLLECTOR_ADDR not set, skipping Opentelemtry tracing")
+		withOtel = false
 		return nil, nil
 	}
 	log.Infof("adservice with opentelemetry collector: %s\n", otel_collector_addr)
+	withOtel = true
 	grpcOpts := []otlptracegrpc.Option{
 		otlptracegrpc.WithEndpoint(otel_collector_addr),
 		otlptracegrpc.WithDialOption(grpc.WithBlock()),

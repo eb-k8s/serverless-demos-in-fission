@@ -458,7 +458,7 @@ func (fe *frontendServer) placeOrderHandler(w http.ResponseWriter, r *http.Reque
 		"invoke PlaceOrder",
 		trace.WithSpanKind(trace.SpanKindClient),
 	)
-	order, err := rest.PlaceOrder(ctx_placeorder, svc.httpClient, fe.checkoutSvcAddr, &rest.PlaceOrderRequest{
+	order, err := rest.PlaceOrder(ctx_placeorder, svc.httpClient, withOtel, fe.checkoutSvcAddr, &rest.PlaceOrderRequest{
 		Email: email,
 		CreditCard: &rest.CreditCardInfo{
 			CreditCardNumber:          ccNumber,

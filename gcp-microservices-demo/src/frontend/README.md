@@ -7,4 +7,4 @@ docker build -t xxx:yyy .
 ```
 frontend image repository: registry.cn-beijing.aliyuncs.com/eb-k8s/frontend:v1.0.0
 
-frontend image repository with OpenTelemetry: registry.cn-beijing.aliyuncs.com/eb-k8s/frontend-with-otel:v1.0.0
+frontend image repository with OpenTelemetry: registry.cn-beijing.aliyuncs.com/eb-k8s/frontend-with-otel:v1.1.0

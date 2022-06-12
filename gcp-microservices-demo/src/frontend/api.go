@@ -18,7 +18,7 @@ func (fe *frontendServer) getCurrencies(ctx context.Context, tracer trace.Tracer
 	defer span.End()
 
 	span.AddEvent("invoke GetSupportedCurrencies")
-	currs, err := rest.GetSupportedCurrencies(ctx, fe.httpClient, fe.currencySvcAddr)
+	currs, err := rest.GetSupportedCurrencies(ctx, fe.httpClient, withOtel, fe.currencySvcAddr)
 	if err != nil {
 		span.AddEvent("an error occurred in GetSupportedCurrencies")
 		return nil, err
@@ -43,7 +43,7 @@ func (fe *frontendServer) getProducts(ctx context.Context, tracer trace.Tracer) 
 	defer span.End()
 
 	span.AddEvent("invoke ListProducts")
-	resp, err := rest.ListProducts(ctx, fe.httpClient, fe.productCatalogSvcAddr)
+	resp, err := rest.ListProducts(ctx, fe.httpClient, withOtel, fe.productCatalogSvcAddr)
 	if err != nil {
 		span.AddEvent("an error occurred in ListProducts")
 		return resp.GetProducts(), err
@@ -62,7 +62,7 @@ func (fe *frontendServer) getProduct(ctx context.Context, tracer trace.Tracer, i
 	defer span.End()
 
 	span.AddEvent("invoke GetProduct")
-	resp, err := rest.GetProduct(ctx, fe.httpClient, fe.productCatalogSvcAddr, &rest.GetProductRequest{Id: id})
+	resp, err := rest.GetProduct(ctx, fe.httpClient, withOtel, fe.productCatalogSvcAddr, &rest.GetProductRequest{Id: id})
 	if err != nil {
 		span.AddEvent("an error occurred in GetProduct")
 		return resp, err
@@ -81,7 +81,7 @@ func (fe *frontendServer) getCart(ctx context.Context, tracer trace.Tracer, user
 	defer span.End()
 
 	span.AddEvent("invoke GetCart")
-	resp, err := rest.GetCart(ctx, fe.httpClient, fe.cartSvcAddr, &rest.GetCartRequest{UserId: userID})
+	resp, err := rest.GetCart(ctx, fe.httpClient, withOtel, fe.cartSvcAddr, &rest.GetCartRequest{UserId: userID})
 	if err != nil {
 		span.AddEvent("an error occurred in GetCart")
 		return resp.GetItems(), err
@@ -100,7 +100,7 @@ func (fe *frontendServer) emptyCart(ctx context.Context, tracer trace.Tracer, us
 	defer span.End()
 
 	span.AddEvent("invoke EmptyCart")
-	err := rest.EmptyCart(ctx, fe.httpClient, fe.cartSvcAddr, &rest.EmptyCartRequest{UserId: userID})
+	err := rest.EmptyCart(ctx, fe.httpClient, withOtel, fe.cartSvcAddr, &rest.EmptyCartRequest{UserId: userID})
 	if err != nil {
 		span.AddEvent("an error occurred in EmptyCart")
 		return err
@@ -119,7 +119,7 @@ func (fe *frontendServer) insertCart(ctx context.Context, tracer trace.Tracer, u
 	defer span.End()
 
 	span.AddEvent("invoke AddItem")
-	err := rest.AddItem(ctx, fe.httpClient, fe.cartSvcAddr, &rest.AddItemRequest{
+	err := rest.AddItem(ctx, fe.httpClient, withOtel, fe.cartSvcAddr, &rest.AddItemRequest{
 		UserId: userID,
 		Item: &rest.CartItem{
 			ProductId: productID,
@@ -143,7 +143,7 @@ func (fe *frontendServer) convertCurrency(ctx context.Context, tracer trace.Trac
 	defer span.End()
 
 	span.AddEvent("invoke Convert")
-	resp, err := rest.Convert(ctx, fe.httpClient, fe.currencySvcAddr, &rest.CurrencyConversionRequest{
+	resp, err := rest.Convert(ctx, fe.httpClient, withOtel, fe.currencySvcAddr, &rest.CurrencyConversionRequest{
 		From:   money,
 		ToCode: currency})
 	if err != nil {
@@ -163,7 +163,7 @@ func (fe *frontendServer) getShippingQuote(ctx context.Context, tracer trace.Tra
 	)
 
 	span.AddEvent("invoke GetQuote")
-	quote, err := rest.GetQuote(ctx_getquote, fe.httpClient, fe.shippingSvcAddr, &rest.GetQuoteRequest{
+	quote, err := rest.GetQuote(ctx_getquote, fe.httpClient, withOtel, fe.shippingSvcAddr, &rest.GetQuoteRequest{
 		Address: nil,
 		Items:   items})
 	if err != nil {
@@ -187,7 +187,7 @@ func (fe *frontendServer) getRecommendations(ctx context.Context, tracer trace.T
 	)
 
 	span.AddEvent("invoke ListRecommendations")
-	resp, err := rest.ListRecommendations(ctx_listrecommendations, fe.httpClient, fe.recommendationSvcAddr, &rest.ListRecommendationsRequest{UserId: userID, ProductIds: productIDs})
+	resp, err := rest.ListRecommendations(ctx_listrecommendations, fe.httpClient, withOtel, fe.recommendationSvcAddr, &rest.ListRecommendationsRequest{UserId: userID, ProductIds: productIDs})
 	if err != nil {
 		span.AddEvent("an error occurred in ListRecommendations")
 		span.End()
@@ -220,7 +220,7 @@ func (fe *frontendServer) getAd(ctx context.Context, tracer trace.Tracer, ctxKey
 	defer span.End()
 
 	span.AddEvent("invoke GetAds")
-	resp, err := rest.GetAds(ctx, fe.httpClient, fe.adSvcAddr, &rest.AdRequest{
+	resp, err := rest.GetAds(ctx, fe.httpClient, withOtel, fe.adSvcAddr, &rest.AdRequest{
 		ContextKeys: ctxKeys,
 	})
 	if err != nil {

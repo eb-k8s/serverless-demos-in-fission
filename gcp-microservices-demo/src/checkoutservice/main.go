@@ -54,6 +54,7 @@ type checkoutService struct {
 
 var log *logrus.Logger
 var svc *checkoutService
+var withOtel bool
 
 // Initializes an OTLP exporter, and configures the corresponding trace and
 // metric providers.
@@ -92,9 +93,11 @@ func getTraceExporter(ctx context.Context) (*otlptrace.Exporter, error) {
 	otel_collector_addr := os.Getenv("OTEL_COLLECTOR_ADDR")
 	if otel_collector_addr == "" {
 		log.Info("OTEL_COLLECTOR_ADDR not set, skipping Opentelemtry tracing")
+		withOtel = false
 		return nil, nil
 	}
 	log.Infof("adservice with opentelemetry collector: %s\n", otel_collector_addr)
+	withOtel = true
 	grpcOpts := []otlptracegrpc.Option{
 		otlptracegrpc.WithEndpoint(otel_collector_addr),
 		otlptracegrpc.WithDialOption(grpc.WithBlock()),
@@ -320,7 +323,7 @@ func (cs *checkoutService) quoteShipping(ctx context.Context, tracer trace.Trace
 	defer span.End()
 
 	span.AddEvent("invoke GetQuote")
-	shippingQuote, err := rest.GetQuote(ctx, cs.httpClient, cs.shippingSvcAddr, &rest.GetQuoteRequest{
+	shippingQuote, err := rest.GetQuote(ctx, cs.httpClient, withOtel, cs.shippingSvcAddr, &rest.GetQuoteRequest{
 		Address: address,
 		Items:   items,
 	})
@@ -342,7 +345,7 @@ func (cs *checkoutService) getUserCart(ctx context.Context, tracer trace.Tracer,
 	defer span.End()
 
 	span.AddEvent("invoke GetCart")
-	cart, err := rest.GetCart(ctx, cs.httpClient, cs.cartSvcAddr, &rest.GetCartRequest{UserId: userID})
+	cart, err := rest.GetCart(ctx, cs.httpClient, withOtel, cs.cartSvcAddr, &rest.GetCartRequest{UserId: userID})
 	if err != nil {
 		span.AddEvent("an error occurred in GetCart")
 		return nil, fmt.Errorf("failed to get user cart during checkout: %+v", err)
@@ -361,7 +364,7 @@ func (cs *checkoutService) emptyUserCart(ctx context.Context, tracer trace.Trace
 	defer span.End()
 
 	span.AddEvent("invoke EmptyCart")
-	if err := rest.EmptyCart(ctx, cs.httpClient, cs.cartSvcAddr, &rest.EmptyCartRequest{UserId: userID}); err != nil {
+	if err := rest.EmptyCart(ctx, cs.httpClient, withOtel, cs.cartSvcAddr, &rest.EmptyCartRequest{UserId: userID}); err != nil {
 		span.AddEvent("an error occurred in EmptyCart")
 		return fmt.Errorf("failed to empty user cart during checkout: %+v", err)
 	}
@@ -381,7 +384,7 @@ func (cs *checkoutService) prepOrderItems(ctx context.Context, tracer trace.Trac
 		)
 
 		span.AddEvent("invoke GetProduct")
-		product, err := rest.GetProduct(ctx_getproduct, cs.httpClient, cs.productCatalogSvcAddr, &rest.GetProductRequest{Id: item.GetProductId()})
+		product, err := rest.GetProduct(ctx_getproduct, cs.httpClient, withOtel, cs.productCatalogSvcAddr, &rest.GetProductRequest{Id: item.GetProductId()})
 		if err != nil {
 			span.AddEvent("an error occurred in GetProduct")
 			span.End()
@@ -412,7 +415,7 @@ func (cs *checkoutService) convertCurrency(ctx context.Context, tracer trace.Tra
 	defer span.End()
 
 	span.AddEvent("invoke Convert")
-	result, err := rest.Convert(ctx, cs.httpClient, cs.currencySvcAddr, &rest.CurrencyConversionRequest{
+	result, err := rest.Convert(ctx, cs.httpClient, withOtel, cs.currencySvcAddr, &rest.CurrencyConversionRequest{
 		From:   from,
 		ToCode: toCurrency,
 	})
@@ -434,7 +437,7 @@ func (cs *checkoutService) chargeCard(ctx context.Context, tracer trace.Tracer, 
 	defer span.End()
 
 	span.AddEvent("invoke Charge")
-	paymentResp, err := rest.Charge(ctx, cs.httpClient, cs.paymentSvcAddr, &rest.ChargeRequest{
+	paymentResp, err := rest.Charge(ctx, cs.httpClient, withOtel, cs.paymentSvcAddr, &rest.ChargeRequest{
 		Amount:     amount,
 		CreditCard: paymentInfo,
 	})
@@ -456,7 +459,7 @@ func (cs *checkoutService) sendOrderConfirmation(ctx context.Context, tracer tra
 	defer span.End()
 
 	span.AddEvent("invoke SendOrderConfirmation")
-	err := rest.SendOrderConfirmation(ctx, cs.httpClient, cs.emailSvcAddr, &rest.SendOrderConfirmationRequest{
+	err := rest.SendOrderConfirmation(ctx, cs.httpClient, withOtel, cs.emailSvcAddr, &rest.SendOrderConfirmationRequest{
 		Email: email,
 		Order: order,
 	})
@@ -478,7 +481,7 @@ func (cs *checkoutService) shipOrder(ctx context.Context, tracer trace.Tracer, a
 	defer span.End()
 
 	span.AddEvent("invoke ShipOrder")
-	resp, err := rest.ShipOrder(ctx, cs.httpClient, cs.shippingSvcAddr, &rest.ShipOrderRequest{
+	resp, err := rest.ShipOrder(ctx, cs.httpClient, withOtel, cs.shippingSvcAddr, &rest.ShipOrderRequest{
 		Address: address,
 		Items:   items,
 	})

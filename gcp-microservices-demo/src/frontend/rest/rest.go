@@ -173,15 +173,29 @@ func (m *Money) GetNanos() int32 {
 	return 0
 }
 
-func GetSupportedCurrencies(ctx context.Context, client http.Client, currencySvcAddr string) (*GetSupportedCurrenciesResponse, error) {
+func GetSupportedCurrencies(ctx context.Context, client http.Client, withOtel bool, currencySvcAddr string) (*GetSupportedCurrenciesResponse, error) {
 	out := new(GetSupportedCurrenciesResponse)
-	req, err := http.NewRequestWithContext(ctx, "GET", currencySvcAddr, nil)
-	if err != nil {
-		return nil, err
-	}
-	res, err := client.Do(req)
-	if err != nil {
-		return nil, err
+	var req *http.Request
+	var res *http.Response
+	var err error
+	if withOtel {
+		req, err = http.NewRequestWithContext(ctx, "GET", currencySvcAddr, nil)
+		if err != nil {
+			return nil, err
+		}
+		res, err = client.Do(req)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		req, err = http.NewRequest("GET", currencySvcAddr, nil)
+		if err != nil {
+			return nil, err
+		}
+		res, err = http.DefaultClient.Do(req)
+		if err != nil {
+			return nil, err
+		}
 	}
 	defer res.Body.Close()
 	body, err := io.ReadAll(res.Body)
@@ -195,15 +209,29 @@ func GetSupportedCurrencies(ctx context.Context, client http.Client, currencySvc
 	return out, nil
 }
 
-func ListProducts(ctx context.Context, client http.Client, productCatalogSvcAddr string) (*ListProductsResponse, error) {
+func ListProducts(ctx context.Context, client http.Client, withOtel bool, productCatalogSvcAddr string) (*ListProductsResponse, error) {
 	out := new(ListProductsResponse)
-	req, err := http.NewRequestWithContext(ctx, "GET", productCatalogSvcAddr, nil)
-	if err != nil {
-		return nil, err
-	}
-	res, err := client.Do(req)
-	if err != nil {
-		return nil, err
+	var req *http.Request
+	var res *http.Response
+	var err error
+	if withOtel {
+		req, err = http.NewRequestWithContext(ctx, "GET", productCatalogSvcAddr, nil)
+		if err != nil {
+			return nil, err
+		}
+		res, err = client.Do(req)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		req, err = http.NewRequest("GET", productCatalogSvcAddr, nil)
+		if err != nil {
+			return nil, err
+		}
+		res, err = http.DefaultClient.Do(req)
+		if err != nil {
+			return nil, err
+		}
 	}
 	defer res.Body.Close()
 	body, err := io.ReadAll(res.Body)
@@ -224,17 +252,31 @@ func (m *ListProductsResponse) GetProducts() []*Product {
 	return nil
 }
 
-func GetProduct(ctx context.Context, client http.Client, productCatalogSvcAddr string, in *GetProductRequest) (*Product, error) {
+func GetProduct(ctx context.Context, client http.Client, withOtel bool, productCatalogSvcAddr string, in *GetProductRequest) (*Product, error) {
 	out := new(Product)
 	v := url.Values{}
 	v.Add("id", in.Id)
-	req, err := http.NewRequestWithContext(ctx, "GET", productCatalogSvcAddr+"?"+v.Encode(), nil)
-	if err != nil {
-		return nil, err
-	}
-	res, err := client.Do(req)
-	if err != nil {
-		return nil, err
+	var req *http.Request
+	var res *http.Response
+	var err error
+	if withOtel {
+		req, err = http.NewRequestWithContext(ctx, "GET", productCatalogSvcAddr+"?"+v.Encode(), nil)
+		if err != nil {
+			return nil, err
+		}
+		res, err = client.Do(req)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		req, err = http.NewRequest("GET", productCatalogSvcAddr+"?"+v.Encode(), nil)
+		if err != nil {
+			return nil, err
+		}
+		res, err = http.DefaultClient.Do(req)
+		if err != nil {
+			return nil, err
+		}
 	}
 	defer res.Body.Close()
 	body, err := io.ReadAll(res.Body)
@@ -248,17 +290,31 @@ func GetProduct(ctx context.Context, client http.Client, productCatalogSvcAddr s
 	return out, nil
 }
 
-func GetCart(ctx context.Context, client http.Client, cartSvcAddr string, in *GetCartRequest) (*Cart, error) {
+func GetCart(ctx context.Context, client http.Client, withOtel bool, cartSvcAddr string, in *GetCartRequest) (*Cart, error) {
 	out := new(Cart)
 	v := url.Values{}
 	v.Add("user_id", in.UserId)
-	req, err := http.NewRequestWithContext(ctx, "GET", cartSvcAddr+"?"+v.Encode(), nil)
-	if err != nil {
-		return nil, err
-	}
-	res, err := client.Do(req)
-	if err != nil {
-		return nil, err
+	var req *http.Request
+	var res *http.Response
+	var err error
+	if withOtel {
+		req, err = http.NewRequestWithContext(ctx, "GET", cartSvcAddr+"?"+v.Encode(), nil)
+		if err != nil {
+			return nil, err
+		}
+		res, err = client.Do(req)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		req, err = http.NewRequest("GET", cartSvcAddr+"?"+v.Encode(), nil)
+		if err != nil {
+			return nil, err
+		}
+		res, err = http.DefaultClient.Do(req)
+		if err != nil {
+			return nil, err
+		}
 	}
 	defer res.Body.Close()
 	body, err := io.ReadAll(res.Body)
@@ -279,56 +335,101 @@ func (m *Cart) GetItems() []*CartItem {
 	return nil
 }
 
-func EmptyCart(ctx context.Context, client http.Client, cartSvcAddr string, in *EmptyCartRequest) error {
+func EmptyCart(ctx context.Context, client http.Client, withOtel bool, cartSvcAddr string, in *EmptyCartRequest) error {
+	var err error
 	payload, err := json.Marshal(in)
 	if err != nil {
 		return err
 	}
-	req, err := http.NewRequestWithContext(ctx, "DELETE", cartSvcAddr, bytes.NewBuffer(payload))
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	res, err := client.Do(req)
-	if err != nil {
-		return err
+	var req *http.Request
+	var res *http.Response
+	if withOtel {
+		req, err = http.NewRequestWithContext(ctx, "DELETE", cartSvcAddr, bytes.NewBuffer(payload))
+		if err != nil {
+			return err
+		}
+		req.Header.Set("Content-Type", "application/json")
+		res, err = client.Do(req)
+		if err != nil {
+			return err
+		}
+	} else {
+		req, err = http.NewRequest("DELETE", cartSvcAddr, bytes.NewBuffer(payload))
+		if err != nil {
+			return err
+		}
+		req.Header.Set("Content-Type", "application/json")
+		res, err = http.DefaultClient.Do(req)
+		if err != nil {
+			return err
+		}
 	}
 	defer res.Body.Close()
 	return nil
 }
 
-func AddItem(ctx context.Context, client http.Client, cartSvcAddr string, in *AddItemRequest) error {
+func AddItem(ctx context.Context, client http.Client, withOtel bool, cartSvcAddr string, in *AddItemRequest) error {
+	var err error
 	payload, err := json.Marshal(in)
 	if err != nil {
 		return err
 	}
-	req, err := http.NewRequestWithContext(ctx, "POST", cartSvcAddr, bytes.NewBuffer(payload))
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	res, err := client.Do(req)
-	if err != nil {
-		return err
+	var req *http.Request
+	var res *http.Response
+	if withOtel {
+		req, err = http.NewRequestWithContext(ctx, "POST", cartSvcAddr, bytes.NewBuffer(payload))
+		if err != nil {
+			return err
+		}
+		req.Header.Set("Content-Type", "application/json")
+		res, err = client.Do(req)
+		if err != nil {
+			return err
+		}
+	} else {
+		req, err = http.NewRequest("POST", cartSvcAddr, bytes.NewBuffer(payload))
+		if err != nil {
+			return err
+		}
+		req.Header.Set("Content-Type", "application/json")
+		res, err = http.DefaultClient.Do(req)
+		if err != nil {
+			return err
+		}
 	}
 	defer res.Body.Close()
 	return nil
 }
 
-func Convert(ctx context.Context, client http.Client, currencySvcAddr string, in *CurrencyConversionRequest) (*Money, error) {
+func Convert(ctx context.Context, client http.Client, withOtel bool, currencySvcAddr string, in *CurrencyConversionRequest) (*Money, error) {
+	var err error
 	out := new(Money)
 	payload, err := json.Marshal(in)
 	if err != nil {
 		return nil, err
 	}
-	req, err := http.NewRequestWithContext(ctx, "POST", currencySvcAddr, bytes.NewBuffer(payload))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	res, err := client.Do(req)
-	if err != nil {
-		return nil, err
+	var req *http.Request
+	var res *http.Response
+	if withOtel {
+		req, err = http.NewRequestWithContext(ctx, "POST", currencySvcAddr, bytes.NewBuffer(payload))
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("Content-Type", "application/json")
+		res, err = client.Do(req)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		req, err = http.NewRequest("POST", currencySvcAddr, bytes.NewBuffer(payload))
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("Content-Type", "application/json")
+		res, err = http.DefaultClient.Do(req)
+		if err != nil {
+			return nil, err
+		}
 	}
 	defer res.Body.Close()
 	body, err := io.ReadAll(res.Body)
@@ -342,20 +443,35 @@ func Convert(ctx context.Context, client http.Client, currencySvcAddr string, in
 	return out, nil
 }
 
-func GetQuote(ctx context.Context, client http.Client, shippingSvcAddr string, in *GetQuoteRequest) (*GetQuoteResponse, error) {
+func GetQuote(ctx context.Context, client http.Client, withOtel bool, shippingSvcAddr string, in *GetQuoteRequest) (*GetQuoteResponse, error) {
+	var err error
 	out := new(GetQuoteResponse)
 	payload, err := json.Marshal(in)
 	if err != nil {
 		return nil, err
 	}
-	req, err := http.NewRequestWithContext(ctx, "POST", shippingSvcAddr, bytes.NewBuffer(payload))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	res, err := client.Do(req)
-	if err != nil {
-		return nil, err
+	var req *http.Request
+	var res *http.Response
+	if withOtel {
+		req, err = http.NewRequestWithContext(ctx, "POST", shippingSvcAddr, bytes.NewBuffer(payload))
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("Content-Type", "application/json")
+		res, err = client.Do(req)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		req, err = http.NewRequest("POST", shippingSvcAddr, bytes.NewBuffer(payload))
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("Content-Type", "application/json")
+		res, err = http.DefaultClient.Do(req)
+		if err != nil {
+			return nil, err
+		}
 	}
 	defer res.Body.Close()
 	body, err := io.ReadAll(res.Body)
@@ -383,18 +499,32 @@ func (m *ListRecommendationsResponse) GetProductIds() []string {
 	return nil
 }
 
-func ListRecommendations(ctx context.Context, client http.Client, recommendationSvcAddr string, in *ListRecommendationsRequest) (*ListRecommendationsResponse, error) {
+func ListRecommendations(ctx context.Context, client http.Client, withOtel bool, recommendationSvcAddr string, in *ListRecommendationsRequest) (*ListRecommendationsResponse, error) {
 	out := new(ListRecommendationsResponse)
 	v := url.Values{}
 	v.Add("user_id", in.UserId)
 	v.Add("product_ids", strings.Join(in.ProductIds, ","))
-	req, err := http.NewRequestWithContext(ctx, "GET", recommendationSvcAddr+"?"+v.Encode(), nil)
-	if err != nil {
-		return nil, err
-	}
-	res, err := client.Do(req)
-	if err != nil {
-		return nil, err
+	var req *http.Request
+	var res *http.Response
+	var err error
+	if withOtel {
+		req, err = http.NewRequestWithContext(ctx, "GET", recommendationSvcAddr+"?"+v.Encode(), nil)
+		if err != nil {
+			return nil, err
+		}
+		res, err = client.Do(req)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		req, err = http.NewRequest("GET", recommendationSvcAddr+"?"+v.Encode(), nil)
+		if err != nil {
+			return nil, err
+		}
+		res, err = http.DefaultClient.Do(req)
+		if err != nil {
+			return nil, err
+		}
 	}
 	defer res.Body.Close()
 	body, err := io.ReadAll(res.Body)
@@ -408,17 +538,31 @@ func ListRecommendations(ctx context.Context, client http.Client, recommendation
 	return out, nil
 }
 
-func GetAds(ctx context.Context, client http.Client, adSvcAddr string, in *AdRequest) (*AdResponse, error) {
+func GetAds(ctx context.Context, client http.Client, withOtel bool, adSvcAddr string, in *AdRequest) (*AdResponse, error) {
 	out := new(AdResponse)
 	v := url.Values{}
 	v.Add("context_keys", strings.Join(in.ContextKeys, ","))
-	req, err := http.NewRequestWithContext(ctx, "GET", adSvcAddr+"?"+v.Encode(), nil)
-	if err != nil {
-		return nil, err
-	}
-	res, err := client.Do(req)
-	if err != nil {
-		return nil, err
+	var req *http.Request
+	var res *http.Response
+	var err error
+	if withOtel {
+		req, err = http.NewRequestWithContext(ctx, "GET", adSvcAddr+"?"+v.Encode(), nil)
+		if err != nil {
+			return nil, err
+		}
+		res, err = client.Do(req)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		req, err = http.NewRequest("GET", adSvcAddr+"?"+v.Encode(), nil)
+		if err != nil {
+			return nil, err
+		}
+		res, err = http.DefaultClient.Do(req)
+		if err != nil {
+			return nil, err
+		}
 	}
 	defer res.Body.Close()
 	body, err := io.ReadAll(res.Body)
@@ -432,20 +576,35 @@ func GetAds(ctx context.Context, client http.Client, adSvcAddr string, in *AdReq
 	return out, nil
 }
 
-func PlaceOrder(ctx context.Context, client http.Client, checkoutSvcAddr string, in *PlaceOrderRequest) (*PlaceOrderResponse, error) {
+func PlaceOrder(ctx context.Context, client http.Client, withOtel bool, checkoutSvcAddr string, in *PlaceOrderRequest) (*PlaceOrderResponse, error) {
+	var err error
 	out := new(PlaceOrderResponse)
 	payload, err := json.Marshal(in)
 	if err != nil {
 		return nil, err
 	}
-	req, err := http.NewRequestWithContext(ctx, "POST", checkoutSvcAddr, bytes.NewBuffer(payload))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	res, err := client.Do(req)
-	if err != nil {
-		return nil, err
+	var req *http.Request
+	var res *http.Response
+	if withOtel {
+		req, err = http.NewRequestWithContext(ctx, "POST", checkoutSvcAddr, bytes.NewBuffer(payload))
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("Content-Type", "application/json")
+		res, err = client.Do(req)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		req, err = http.NewRequest("POST", checkoutSvcAddr, bytes.NewBuffer(payload))
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("Content-Type", "application/json")
+		res, err = http.DefaultClient.Do(req)
+		if err != nil {
+			return nil, err
+		}
 	}
 	defer res.Body.Close()
 	body, err := io.ReadAll(res.Body)

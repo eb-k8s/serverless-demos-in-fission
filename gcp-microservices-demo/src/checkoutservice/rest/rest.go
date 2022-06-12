@@ -177,17 +177,31 @@ func (m *Cart) GetItems() []*CartItem {
 	return nil
 }
 
-func GetCart(ctx context.Context, client http.Client, cartSvcAddr string, in *GetCartRequest) (*Cart, error) {
+func GetCart(ctx context.Context, client http.Client, withOtel bool, cartSvcAddr string, in *GetCartRequest) (*Cart, error) {
 	out := new(Cart)
 	v := url.Values{}
 	v.Add("user_id", in.UserId)
-	req, err := http.NewRequestWithContext(ctx, "GET", cartSvcAddr+"?"+v.Encode(), nil)
-	if err != nil {
-		return nil, err
-	}
-	res, err := client.Do(req)
-	if err != nil {
-		return nil, err
+	var req *http.Request
+	var res *http.Response
+	var err error
+	if withOtel {
+		req, err = http.NewRequestWithContext(ctx, "GET", cartSvcAddr+"?"+v.Encode(), nil)
+		if err != nil {
+			return nil, err
+		}
+		res, err = client.Do(req)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		req, err = http.NewRequest("GET", cartSvcAddr+"?"+v.Encode(), nil)
+		if err != nil {
+			return nil, err
+		}
+		res, err = http.DefaultClient.Do(req)
+		if err != nil {
+			return nil, err
+		}
 	}
 	defer res.Body.Close()
 	body, err := io.ReadAll(res.Body)
@@ -205,19 +219,34 @@ type EmptyCartRequest struct {
 	UserId string `json:"user_id,omitempty"`
 }
 
-func EmptyCart(ctx context.Context, client http.Client, cartSvcAddr string, in *EmptyCartRequest) error {
+func EmptyCart(ctx context.Context, client http.Client, withOtel bool, cartSvcAddr string, in *EmptyCartRequest) error {
+	var err error
 	payload, err := json.Marshal(in)
 	if err != nil {
 		return err
 	}
-	req, err := http.NewRequestWithContext(ctx, "DELETE", cartSvcAddr, bytes.NewBuffer(payload))
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	res, err := client.Do(req)
-	if err != nil {
-		return err
+	var req *http.Request
+	var res *http.Response
+	if withOtel {
+		req, err = http.NewRequestWithContext(ctx, "DELETE", cartSvcAddr, bytes.NewBuffer(payload))
+		if err != nil {
+			return err
+		}
+		req.Header.Set("Content-Type", "application/json")
+		res, err = client.Do(req)
+		if err != nil {
+			return err
+		}
+	} else {
+		req, err = http.NewRequest("DELETE", cartSvcAddr, bytes.NewBuffer(payload))
+		if err != nil {
+			return err
+		}
+		req.Header.Set("Content-Type", "application/json")
+		res, err = http.DefaultClient.Do(req)
+		if err != nil {
+			return err
+		}
 	}
 	defer res.Body.Close()
 	return nil
@@ -280,17 +309,31 @@ func (m *Product) GetCategories() []string {
 	return nil
 }
 
-func GetProduct(ctx context.Context, client http.Client, productCatalogSvcAddr string, in *GetProductRequest) (*Product, error) {
+func GetProduct(ctx context.Context, client http.Client, withOtel bool, productCatalogSvcAddr string, in *GetProductRequest) (*Product, error) {
 	out := new(Product)
 	v := url.Values{}
 	v.Add("id", in.Id)
-	req, err := http.NewRequestWithContext(ctx, "GET", productCatalogSvcAddr+"?"+v.Encode(), nil)
-	if err != nil {
-		return nil, err
-	}
-	res, err := client.Do(req)
-	if err != nil {
-		return nil, err
+	var req *http.Request
+	var res *http.Response
+	var err error
+	if withOtel {
+		req, err = http.NewRequestWithContext(ctx, "GET", productCatalogSvcAddr+"?"+v.Encode(), nil)
+		if err != nil {
+			return nil, err
+		}
+		res, err = client.Do(req)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		req, err = http.NewRequest("GET", productCatalogSvcAddr+"?"+v.Encode(), nil)
+		if err != nil {
+			return nil, err
+		}
+		res, err = http.DefaultClient.Do(req)
+		if err != nil {
+			return nil, err
+		}
 	}
 	defer res.Body.Close()
 	body, err := io.ReadAll(res.Body)
@@ -310,20 +353,35 @@ type CurrencyConversionRequest struct {
 	ToCode string `json:"to_code,omitempty"`
 }
 
-func Convert(ctx context.Context, client http.Client, currencySvcAddr string, in *CurrencyConversionRequest) (*Money, error) {
+func Convert(ctx context.Context, client http.Client, withOtel bool, currencySvcAddr string, in *CurrencyConversionRequest) (*Money, error) {
+	var err error
 	out := new(Money)
 	payload, err := json.Marshal(in)
 	if err != nil {
 		return nil, err
 	}
-	req, err := http.NewRequestWithContext(ctx, "POST", currencySvcAddr, bytes.NewBuffer(payload))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	res, err := client.Do(req)
-	if err != nil {
-		return nil, err
+	var req *http.Request
+	var res *http.Response
+	if withOtel {
+		req, err = http.NewRequestWithContext(ctx, "POST", currencySvcAddr, bytes.NewBuffer(payload))
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("Content-Type", "application/json")
+		res, err = client.Do(req)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		req, err = http.NewRequest("POST", currencySvcAddr, bytes.NewBuffer(payload))
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("Content-Type", "application/json")
+		res, err = http.DefaultClient.Do(req)
+		if err != nil {
+			return nil, err
+		}
 	}
 	defer res.Body.Close()
 	body, err := io.ReadAll(res.Body)
@@ -367,20 +425,35 @@ func (m *ChargeResponse) GetTransactionId() string {
 	return ""
 }
 
-func Charge(ctx context.Context, client http.Client, paymentSvcAddr string, in *ChargeRequest) (*ChargeResponse, error) {
+func Charge(ctx context.Context, client http.Client, withOtel bool, paymentSvcAddr string, in *ChargeRequest) (*ChargeResponse, error) {
+	var err error
 	out := new(ChargeResponse)
 	payload, err := json.Marshal(in)
 	if err != nil {
 		return nil, err
 	}
-	req, err := http.NewRequestWithContext(ctx, "POST", paymentSvcAddr, bytes.NewBuffer(payload))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	res, err := client.Do(req)
-	if err != nil {
-		return nil, err
+	var req *http.Request
+	var res *http.Response
+	if withOtel {
+		req, err = http.NewRequestWithContext(ctx, "POST", paymentSvcAddr, bytes.NewBuffer(payload))
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("Content-Type", "application/json")
+		res, err = client.Do(req)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		req, err = http.NewRequest("POST", paymentSvcAddr, bytes.NewBuffer(payload))
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("Content-Type", "application/json")
+		res, err = http.DefaultClient.Do(req)
+		if err != nil {
+			return nil, err
+		}
 	}
 	defer res.Body.Close()
 	body, err := io.ReadAll(res.Body)
@@ -413,19 +486,34 @@ func (m *SendOrderConfirmationRequest) GetOrder() *OrderResult {
 	return nil
 }
 
-func SendOrderConfirmation(ctx context.Context, client http.Client, emailSvcAddr string, in *SendOrderConfirmationRequest) error {
+func SendOrderConfirmation(ctx context.Context, client http.Client, withOtel bool, emailSvcAddr string, in *SendOrderConfirmationRequest) error {
+	var err error
 	payload, err := json.Marshal(in)
 	if err != nil {
 		return err
 	}
-	req, err := http.NewRequestWithContext(ctx, "POST", emailSvcAddr, bytes.NewBuffer(payload))
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	res, err := client.Do(req)
-	if err != nil {
-		return err
+	var req *http.Request
+	var res *http.Response
+	if withOtel {
+		req, err = http.NewRequestWithContext(ctx, "POST", emailSvcAddr, bytes.NewBuffer(payload))
+		if err != nil {
+			return err
+		}
+		req.Header.Set("Content-Type", "application/json")
+		res, err = client.Do(req)
+		if err != nil {
+			return err
+		}
+	} else {
+		req, err = http.NewRequest("POST", emailSvcAddr, bytes.NewBuffer(payload))
+		if err != nil {
+			return err
+		}
+		req.Header.Set("Content-Type", "application/json")
+		res, err = http.DefaultClient.Do(req)
+		if err != nil {
+			return err
+		}
 	}
 	defer res.Body.Close()
 	return nil
@@ -461,20 +549,35 @@ func (m *ShipOrderResponse) GetTrackingId() string {
 	return ""
 }
 
-func ShipOrder(ctx context.Context, client http.Client, shippingSvcAddr string, in *ShipOrderRequest) (*ShipOrderResponse, error) {
+func ShipOrder(ctx context.Context, client http.Client, withOtel bool, shippingSvcAddr string, in *ShipOrderRequest) (*ShipOrderResponse, error) {
+	var err error
 	out := new(ShipOrderResponse)
 	payload, err := json.Marshal(in)
 	if err != nil {
 		return nil, err
 	}
-	req, err := http.NewRequestWithContext(ctx, "PUT", shippingSvcAddr, bytes.NewBuffer(payload))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	res, err := client.Do(req)
-	if err != nil {
-		return nil, err
+	var req *http.Request
+	var res *http.Response
+	if withOtel {
+		req, err = http.NewRequestWithContext(ctx, "PUT", shippingSvcAddr, bytes.NewBuffer(payload))
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("Content-Type", "application/json")
+		res, err = client.Do(req)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		req, err = http.NewRequest("PUT", shippingSvcAddr, bytes.NewBuffer(payload))
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("Content-Type", "application/json")
+		res, err = http.DefaultClient.Do(req)
+		if err != nil {
+			return nil, err
+		}
 	}
 	defer res.Body.Close()
 	body, err := io.ReadAll(res.Body)
@@ -518,20 +621,35 @@ func (m *GetQuoteResponse) GetCostUsd() *Money {
 	return nil
 }
 
-func GetQuote(ctx context.Context, client http.Client, shippingSvcAddr string, in *GetQuoteRequest) (*GetQuoteResponse, error) {
+func GetQuote(ctx context.Context, client http.Client, withOtel bool, shippingSvcAddr string, in *GetQuoteRequest) (*GetQuoteResponse, error) {
+	var err error
 	out := new(GetQuoteResponse)
 	payload, err := json.Marshal(in)
 	if err != nil {
 		return nil, err
 	}
-	req, err := http.NewRequestWithContext(ctx, "POST", shippingSvcAddr, bytes.NewBuffer(payload))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	res, err := client.Do(req)
-	if err != nil {
-		return nil, err
+	var req *http.Request
+	var res *http.Response
+	if withOtel {
+		req, err = http.NewRequestWithContext(ctx, "POST", shippingSvcAddr, bytes.NewBuffer(payload))
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("Content-Type", "application/json")
+		res, err = client.Do(req)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		req, err = http.NewRequest("POST", shippingSvcAddr, bytes.NewBuffer(payload))
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("Content-Type", "application/json")
+		res, err = http.DefaultClient.Do(req)
+		if err != nil {
+			return nil, err
+		}
 	}
 	defer res.Body.Close()
 	body, err := io.ReadAll(res.Body)
